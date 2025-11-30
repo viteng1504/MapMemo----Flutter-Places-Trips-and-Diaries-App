@@ -10,7 +10,7 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../cubits/login_cubit.dart';
 import '../cubits/login_state.dart';
-import '../widgets/auth_button.dart';
+import '../../../../core/widgets/my_primary_button.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/square_tile.dart';
 
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
 
                         const SizedBox(height: 24),
-                        AuthButton(
+                        MyPrimaryButton(
                           onPressed: state is LoginLoading
                               ? null
                               : () {
@@ -136,17 +136,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Expanded(
                               child: Divider(
-                                color: AppColors.border,
+                                color: AppColors.onSurfaceGray2,
                                 thickness: 1,
                               ),
                             ),
                             Text(
-                              "Or continue with",
+                              " Or continue with ",
                               style: theme.textTheme.bodyMedium,
                             ),
                             const Expanded(
                               child: Divider(
-                                color: AppColors.border,
+                                color: AppColors.onSurfaceGray2,
                                 thickness: 1,
                               ),
                             ),

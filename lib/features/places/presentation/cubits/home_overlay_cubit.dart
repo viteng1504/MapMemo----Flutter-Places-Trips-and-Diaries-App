@@ -7,6 +7,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/map/map_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/user_position.dart';
 import 'home_overlay_state.dart';
 
 class HomeOverlayCubit extends Cubit<HomeOverlayState> {
@@ -51,14 +52,18 @@ class HomeOverlayCubit extends Cubit<HomeOverlayState> {
                 onTap: () async {
                   // final ok = await Utils.checkLocationPermission();
                   // if (!ok) return;
-                  Navigator.pop(context);
-
                   print("Save current position");
                   final pos = await geo.Geolocator.getCurrentPosition(
                     desiredAccuracy: geo.LocationAccuracy.high,
                   );
 
                   MapService.instance.flyToUser(pos);
+
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.placeDetails,
+                    arguments: UserPosition(pos.longitude, pos.latitude),
+                  );
 
                   // TODO: thêm logic lưu vị trí
                 },
@@ -76,7 +81,7 @@ class HomeOverlayCubit extends Cubit<HomeOverlayState> {
                   // TODO: bật chế độ chọn vị trí
                   // MapService.instance.enableSelectMode();
                   print("add  place");
-                  Navigator.pushNamed(context, AppRoutes.addPlace);
+                  Navigator.pushNamed(context, AppRoutes.selectPlace);
                   // Navigator.pop(context);
                 },
               ),

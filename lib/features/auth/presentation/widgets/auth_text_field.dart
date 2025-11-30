@@ -24,7 +24,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
     return TextField(
       decoration: InputDecoration(
         labelText: widget.hintText,
-        fillColor: AppColors.onSurfaceGray1,
+        fillColor: AppColors.onSurfaceGray3,
         filled: true,
       ),
       controller: widget.controller,

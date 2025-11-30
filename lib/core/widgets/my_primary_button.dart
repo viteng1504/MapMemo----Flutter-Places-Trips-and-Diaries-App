@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
-class AuthButton extends StatefulWidget {
+class MyPrimaryButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final String label;
 
-  const AuthButton({super.key, required this.onPressed, required this.label});
+  const MyPrimaryButton({
+    super.key,
+    required this.onPressed,
+    required this.label,
+  });
 
   @override
-  _AuthButtonState createState() => _AuthButtonState();
+  _MyPrimaryButtonState createState() => _MyPrimaryButtonState();
 }
 
-class _AuthButtonState extends State<AuthButton> {
+class _MyPrimaryButtonState extends State<MyPrimaryButton> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
@@ -25,7 +29,11 @@ class _AuthButtonState extends State<AuthButton> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Text(
               widget.label,
-              style: const TextStyle(color: AppColors.onPrimary),
+              style: const TextStyle(
+                color: AppColors.onPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

@@ -42,11 +42,11 @@ class _MyBottomAppBarState extends State<MyBottomAppBar> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navIcon(Icons.location_on, 1, "Home"),
-              _navIcon(Icons.person, 2, "Profile"),
+              _navIcon(Icons.trip_origin_outlined, 1, "Trips"),
+              _navIcon(Icons.book, 2, "Diaries"),
               const SizedBox(width: 50),
-              _navIcon(Icons.home, 3, "Home"),
-              _navIcon(Icons.person, 4, "Profile"),
+              _navIcon(Icons.notifications, 3, "Notifications"),
+              _navIcon(Icons.account_box, 4, "Profile"),
             ],
           ),
         ),
@@ -60,7 +60,7 @@ class _MyBottomAppBarState extends State<MyBottomAppBar> {
     return Expanded(
       child: ClipRRect(
         child: Material(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(12),
           clipBehavior: Clip.antiAlias,
           color: Colors.transparent,
           child: InkWell(

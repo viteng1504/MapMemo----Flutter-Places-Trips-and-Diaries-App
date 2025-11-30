@@ -62,6 +62,12 @@ class _MapShellState extends State<MapShell> {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,

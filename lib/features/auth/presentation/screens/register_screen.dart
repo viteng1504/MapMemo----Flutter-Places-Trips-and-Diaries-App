@@ -4,12 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/my_primary_button.dart';
 import '../../data/data_sources/remote/auth_api.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../cubits/register_cubit.dart';
 import '../cubits/register_state.dart';
-import '../widgets/auth_button.dart';
 import '../widgets/auth_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -104,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         // auth button
                         const SizedBox(height: 24),
-                        AuthButton(
+                        MyPrimaryButton(
                           onPressed: () {
                             context.read<RegisterCubit>().register(
                               emailController.text,

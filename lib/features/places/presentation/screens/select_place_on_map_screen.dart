@@ -5,14 +5,14 @@ import '../../../../core/services/map/add_place_map_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/home_search_bar.dart';
 
-class AddPlaceScreen extends StatefulWidget {
-  const AddPlaceScreen({super.key});
+class SelectPlaceOnMapScreen extends StatefulWidget {
+  const SelectPlaceOnMapScreen({super.key});
 
   @override
-  _AddPlaceScreenState createState() => _AddPlaceScreenState();
+  _SelectPlaceOnMapScreenState createState() => _SelectPlaceOnMapScreenState();
 }
 
-class _AddPlaceScreenState extends State<AddPlaceScreen> {
+class _SelectPlaceOnMapScreenState extends State<SelectPlaceOnMapScreen> {
   final AddPlaceMapService _mapService = AddPlaceMapService();
 
   @override

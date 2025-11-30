@@ -17,9 +17,9 @@ class ExploreOverlayUI extends StatelessWidget {
       snapAnimationDuration: const Duration(milliseconds: 300),
       builder: (context, controller) {
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.background2,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             // boxShadow: [BoxShadow(color: AppColors.shadow, blurRadius: 10)],
           ),
           child: ListView(
@@ -39,6 +39,7 @@ class ExploreOverlayUI extends StatelessWidget {
               ),
 
               const SizedBox(height: 10),
+              Text("asdfasd")
             ],
           ),
         );

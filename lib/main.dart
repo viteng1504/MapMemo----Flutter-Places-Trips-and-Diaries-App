@@ -5,7 +5,8 @@ import 'core/services/api_services.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
-import 'features/places/presentation/screens/add_place_screen.dart';
+import 'features/places/presentation/screens/place_details_screen.dart';
+import 'features/places/presentation/screens/select_place_on_map_screen.dart';
 import 'map_shell.dart';
 
 void main() async {
@@ -19,7 +20,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -31,7 +31,8 @@ class MyApp extends StatelessWidget {
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.home: (context) => const MapShell(),
-        AppRoutes.addPlace: (context) => const AddPlaceScreen(),
+        AppRoutes.selectPlace: (context) => const SelectPlaceOnMapScreen(),
+        AppRoutes.placeDetails: (context) => const PlaceDetailsScreen(),
       },
     );
   }
