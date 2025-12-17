@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/planner/planner_stop_entity.dart';
 import 'start_plan_trip.dart';
 
 class TripPlannerOverlayUi extends StatefulWidget {
@@ -23,6 +24,33 @@ class _TripPlannerOverlayUiState extends State<TripPlannerOverlayUi> {
       DraggableScrollableController();
 
   bool hasPlaces = false;
+
+  //sort date
+  DateTime normalizeDate(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime startDateOfStop({
+    required DateTime tripStartDate,
+    required List<PlannerStopEntity> stops, // sorted by index
+    required int i,
+  }) {
+    final start = normalizeDate(tripStartDate);
+
+    int offsetDays = 0;
+    for (int k = 0; k < i; k++) {
+      offsetDays += stops[k].nights;
+    }
+
+    return start.add(Duration(days: offsetDays));
+  }
+
+  DateTime endDateOfStop({
+    required DateTime tripStartDate,
+    required List<PlannerStopEntity> stops,
+    required int i,
+  }) {
+    final s = startDateOfStop(tripStartDate: tripStartDate, stops: stops, i: i);
+    return s.add(Duration(days: stops[i].nights));
+  }
 
   //No places in list fuction
   Future<void> _onGetPersonalize() async {

@@ -6,6 +6,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/map/trip_plan_map_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/planner/planner_stop_entity.dart';
 import '../widgets/trip_planning_and_tracking/planner/planner_add_destination_overlay_ui.dart';
 import '../widgets/trip_planning_and_tracking/planner/planner_place_overlay_ui.dart';
 import '../widgets/trip_planning_and_tracking/planner/trip_planner_overlay_ui.dart';
@@ -41,6 +42,8 @@ class _TripPlanningAndTrackingScreenState
     if (_overlayStack.isEmpty) return;
     setState(() => _overlayStack.removeLast());
   }
+
+  
 
   final placesGeoJson = {
     "type": "FeatureCollection",

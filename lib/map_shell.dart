@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/constants/app_api.dart';
 import 'core/services/map/map_service.dart';
 import 'core/theme/app_colors.dart';
 import 'core/utils/utils.dart';
@@ -46,8 +47,10 @@ class _MapShellState extends State<MapShell> {
   }
 
   Future<List<Position>> fetchRoute() async {
-    const url =
-        'https://api.mapbox.com/directions/v5/mapbox/driving/105.8342,21.0278;106.6881,20.8449?geometries=geojson&overview=full&access_token=sk.eyJ1IjoiYmF0bWFudGsxMjM0NSIsImEiOiJjbWl0emhwbXgxNDRmNXRzOXFjN21qM3ExIn0.imJkbqA6aTpFAEPG906_CQ';
+    final mapboxToken = AppApi.mapboxAccessToken;
+
+    final url =
+        'https://api.mapbox.com/directions/v5/mapbox/driving/105.8342,21.0278;106.6881,20.8449?geometries=geojson&overview=full&access_token=$mapboxToken';
 
     final res = await http.get(Uri.parse(url));
     final data = jsonDecode(res.body);
