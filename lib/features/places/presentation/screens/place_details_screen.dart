@@ -5,216 +5,214 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/constants/app_api.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../my_local_storage.dart';
 import '../../domain/entities/place_entity.dart';
-import '../../domain/entities/user_position.dart';
+import '../../domain/entities/place_position.dart';
+import '../widgets/add_place_details//error_text.dart';
+import '../widgets/add_place_details//fancy_button.dart';
+import '../widgets/add_place_details//map_preview.dart';
+import '../widgets/add_place_details//place_image_picker.dart';
+import '../widgets/add_place_details//place_images_grid.dart';
+import '../widgets/add_place_details//place_input_card.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   const PlaceDetailsScreen({super.key});
 
   @override
-  _PlaceDetailsScreenState createState() => _PlaceDetailsScreenState();
+  State<PlaceDetailsScreen> createState() => _PlaceDetailsScreenState();
 }
 
 class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
-  late UserPosition userPosition;
-  List<Uint8List> images = [];
+  late PlacePosition position;
+
+  String? mapUrl;
   final ImagePicker picker = ImagePicker();
-  final TextEditingController name = TextEditingController();
-  final TextEditingController description = TextEditingController();
-  final TextEditingController address = TextEditingController();
+
+  // controllers
+  final name = TextEditingController();
+  final description = TextEditingController();
+  final address = TextEditingController();
+
+  // errors
   String? nameError;
   String? descError;
   String? addressError;
-  // final TextEditingController city = TextEditingController();
-  // final TextEditingController country = TextEditingController();
+
+  // images
+  List<Uint8List> images = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        userPosition =
-            ModalRoute.of(context)!.settings.arguments as UserPosition;
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      position = ModalRoute.of(context)!.settings.arguments as PlacePosition;
+
+      final url = await getStaticMap(position.lng, position.lat);
+      setState(() => mapUrl = url);
     });
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
-    super.dispose();
     name.dispose();
     description.dispose();
     address.dispose();
+    super.dispose();
+  }
+
+  // =============================
+  // LOGIC
+  // =============================
+
+  Future<String> getStaticMap(double lng, double lat) async {
+    return "https://api.mapbox.com/styles/v1/mapbox/streets-v12/static"
+        "/pin-l+ff0000($lng,$lat)/$lng,$lat,15,0/800x500"
+        "?access_token=${AppApi.mapboxAccessToken}";
   }
 
   Future<void> pickImages() async {
-    final List<XFile> imagesList = await picker.pickMultiImage();
+    final List<XFile> list = await picker.pickMultiImage();
+    final bytes = <Uint8List>[];
 
-    final List<Uint8List> imageBytes = [];
-
-    for (final image in imagesList) {
-      imageBytes.add(await image.readAsBytes());
+    for (final img in list) {
+      bytes.add(await img.readAsBytes());
     }
 
-    setState(() {
-      images = imageBytes;
-    });
+    setState(() => images = bytes);
   }
 
   void randomPlace() {
-    final random = Random();
+    final names = ["Vincom Center", "Cầu Rồng", "Hồ Gươm", "Bà Nà Hills"];
+    final descs = ["Đẹp cực!", "Rất đáng đi!", "Nổi tiếng", "Có view đẹp"];
+    final addr = ["Đà Nẵng", "Hà Nội", "Hồ Chí Minh"];
 
-    // Tên địa điểm (place name)
-    final placeNames = [
-      "Vincom Center",
-      "Landmark 81",
-      "Bến Nhà Rồng",
-      "Cầu Rồng",
-      "Hồ Gươm",
-      "Chợ Bến Thành",
-      "Nhà Thờ Đức Bà",
-      "Bà Nà Hills",
-      "Phố cổ Hội An",
-    ];
-
-    // Mô tả địa điểm
-    final placeDescriptions = [
-      "Một địa điểm nổi tiếng thu hút rất nhiều du khách.",
-      "Nơi có kiến trúc độc đáo và cảnh quan đẹp.",
-      "Địa điểm phù hợp để tham quan và chụp ảnh.",
-      "Nơi mang nhiều giá trị văn hoá và lịch sử.",
-      "Không gian rộng rãi, hiện đại và sầm uất.",
-    ];
-
-    // Địa chỉ
-    final placeAddresses = [
-      "Quận 1, TP. Hồ Chí Minh",
-      "Bình Thạnh, TP. Hồ Chí Minh",
-      "Hoàn Kiếm, Hà Nội",
-      "Sơn Trà, Đà Nẵng",
-      "Hội An, Quảng Nam",
-      "Hải Châu, Đà Nẵng",
-    ];
-
-    name.text = placeNames[random.nextInt(placeNames.length)];
-    description.text =
-        placeDescriptions[random.nextInt(placeDescriptions.length)];
-    address.text = placeAddresses[random.nextInt(placeAddresses.length)];
+    name.text = names[Random().nextInt(names.length)];
+    description.text = descs[Random().nextInt(descs.length)];
+    address.text = addr[Random().nextInt(addr.length)];
   }
 
   void savePlace() {
     setState(() {
-      nameError = name.text.trim().isEmpty ? "Can not empty" : null;
-      descError = description.text.trim().isEmpty ? "Can not empty" : null;
-      addressError = address.text.trim().isEmpty ? "Can not empty" : null;
+      nameError = name.text.isEmpty ? "Required" : null;
+      descError = description.text.isEmpty ? "Required" : null;
+      addressError = address.text.isEmpty ? "Required" : null;
     });
-    MyLocalStorage.printPlacesData();
 
     if (nameError != null || descError != null || addressError != null) return;
 
-    try {
-      final place = PlaceEntity(
-        id: const Uuid().v4(),
-        name: name.text,
-        description: description.text,
-        lat: userPosition.lat,
-        lng: userPosition.lng,
-        address: address.text,
-        // city: "Hà Nội",
-        // country: "Việt Nam",
-        images: [],
-        createdAt: DateTime.now(),
-      );
+    final place = PlaceEntity(
+      id: const Uuid().v4(),
+      name: name.text,
+      description: description.text,
+      address: address.text,
+      lat: position.lat,
+      lng: position.lng,
+      images: images,
+      createdAt: DateTime.now(),
+    );
 
-      debugPrint("Place: ------- ${place.toString()}");
-      MyLocalStorage.places.add(place);
-
-      Navigator.pop(context);
-    } catch (e) {
-      print(e);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Some thing is not right")));
-    }
-
-    MyLocalStorage.printPlacesData();
+    MyLocalStorage.places.add(place);
+    Navigator.pop(context, true);
   }
+
+  // =============================
+  // UI
+  // =============================
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          actions: [],
-          leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.arrow_back),
-          ),
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              TextField(
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(color: Colors.black),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text("Place"),
+      ),
+
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100),
+        child: Column(
+          children: [
+            MapPreview(imageUrl: mapUrl),
+
+            const SizedBox(height: 16),
+
+            PlaceInputCard(
+              title: "Place name",
+              child: TextField(
                 controller: name,
-                decoration: InputDecoration(
-                  labelText: "place name",
-                  errorText: nameError,
+                decoration: const InputDecoration(
+                  hintText: "Enter place name",
+                  border: InputBorder.none,
                 ),
               ),
+            ),
+            if (nameError != null) ErrorText(nameError!),
 
-              TextField(
+            const SizedBox(height: 16),
+
+            PlaceInputCard(
+              title: "Description",
+              child: TextField(
+                maxLines: 3,
                 controller: description,
-                maxLines: null,
-                decoration: InputDecoration(
-                  labelText: "description",
-                  errorText: descError,
+                decoration: const InputDecoration(
+                  hintText: "Describe this place",
+                  border: InputBorder.none,
                 ),
               ),
+            ),
+            if (descError != null) ErrorText(descError!),
 
-              TextField(
+            const SizedBox(height: 16),
+
+            PlaceInputCard(
+              title: "Address",
+              child: TextField(
                 controller: address,
-                decoration: InputDecoration(
-                  labelText: "address",
-                  errorText: addressError,
+                decoration: const InputDecoration(
+                  hintText: "Enter address",
+                  border: InputBorder.none,
                 ),
               ),
+            ),
+            if (addressError != null) ErrorText(addressError!),
 
-              // const TextField(
-              //   decoration: InputDecoration(labelText: "place name"),
-              // ),
-              ElevatedButton(
-                onPressed: randomPlace,
-                child: const Text("Random place"),
+            const SizedBox(height: 16),
+
+            PlaceImagePicker(onPick: pickImages),
+
+            if (images.isNotEmpty)
+              Wrap(
+                children: [
+                  const Divider(color: AppColors.border),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: PlaceImagesGrid(images: images),
+                  ),
+                  const Divider(color: AppColors.border),
+                ],
               ),
 
-              ElevatedButton(
-                onPressed: () {
-                  pickImages();
-                },
-                child: const Text("Pick images"),
-              ),
-              images.isEmpty
-                  ? const CircularProgressIndicator()
-                  : Wrap(
-                      spacing: 10,
-                      children: List.generate(images.length, (index) {
-                        return Image.memory(
-                          images[index],
-                          fit: BoxFit.cover,
-                          width: 40,
-                          height: 40,
-                        );
-                      }),
-                    ),
+            const SizedBox(height: 20),
 
-              ElevatedButton(onPressed: savePlace, child: const Text("save")),
-            ],
-          ),
+            FancyButton(
+              text: "Random place",
+              color: Colors.blue.shade800,
+              onTap: randomPlace,
+            ),
+
+            const SizedBox(height: 20),
+
+            FancyButton(
+              text: "Save",
+              color: Colors.pink.shade600,
+              onTap: savePlace,
+            ),
+          ],
         ),
       ),
     );

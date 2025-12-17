@@ -10,7 +10,7 @@ class AppButtonThemes {
 
         // Border
         shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
 
         // Padding

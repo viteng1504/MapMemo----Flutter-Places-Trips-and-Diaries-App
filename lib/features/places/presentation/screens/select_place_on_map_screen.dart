@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/map/add_place_map_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/place_position.dart';
 import '../widgets/home_search_bar.dart';
 
 class SelectPlaceOnMapScreen extends StatefulWidget {
@@ -14,6 +16,15 @@ class SelectPlaceOnMapScreen extends StatefulWidget {
 
 class _SelectPlaceOnMapScreenState extends State<SelectPlaceOnMapScreen> {
   final AddPlaceMapService _mapService = AddPlaceMapService();
+  bool isSelectOnMap = false;
+  late PlacePosition placePosition;
+
+  void onSelectOnMap(MapContentGestureContext mapContext) {
+    setState(() {
+      isSelectOnMap = _mapService.isSelectOnMap;
+    });
+    _mapService.onSelectPlaceOnMap(mapContext);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +64,11 @@ class _SelectPlaceOnMapScreenState extends State<SelectPlaceOnMapScreen> {
                     ),
                   );
 
-                  _mapService.addOrMoveMarker(Position(108.2022, 16.0544));
+                  // _mapService.addOrMoveMarker(Position(108.2022, 16.0544));
                 },
-                onTapListener: _mapService.onSelectPlaceOnMap,
+                onTapListener: (mapContext) {
+                  onSelectOnMap(mapContext);
+                },
               ),
             ),
             const Positioned(
@@ -113,9 +126,27 @@ class _SelectPlaceOnMapScreenState extends State<SelectPlaceOnMapScreen> {
 
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: isSelectOnMap
+                                ? AppColors.primary
+                                : AppColors.onSurfaceGray3,
                           ),
-                          onPressed: () {},
+                          onPressed: () async {
+                            placePosition = await _mapService
+                                .onGetSelectPlacePosition();
+
+                            final result = await Navigator.pushNamed(
+                              context,
+                              AppRoutes.placeDetails,
+                              arguments: PlacePosition(
+                                lng: placePosition.lng,
+                                lat: placePosition.lat,
+                              ),
+                            );
+
+                            if (result == true) {
+                              Navigator.pop(context, true);
+                            }
+                          },
                           child: Text(
                             "Select this place",
                             style: theme.textTheme.bodyMedium!.copyWith(

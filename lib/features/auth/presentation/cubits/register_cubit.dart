@@ -11,6 +11,7 @@ class RegisterCubit extends Cubit<RegisterState> {
 
   Future<void> register(
     String email,
+    String username,
     String password,
     String confirmPassword,
     BuildContext context,
@@ -26,10 +27,20 @@ class RegisterCubit extends Cubit<RegisterState> {
       return;
     }
     try {
-      await registerUseCase(email, password);
+      await registerUseCase(email, username, password);
       emit(RegisterSuccess());
+      if (state is RegisterSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Register successfull!!!")),
+        );
+      }
     } catch (e) {
       emit(RegisterFailure(e.toString()));
+      if (state is RegisterFailure) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Register Fail!!!")));
+      }
     }
   }
 }

@@ -16,39 +16,39 @@ class AppInputThemes {
       ),
 
       // Hint
-      hintStyle: TextStyle(color: colors.onSurfaceVariant.withOpacity(0.7)),
+      hintStyle: TextStyle(color: colors.onSurfaceVariant.withOpacity(0.5)),
 
       // Text
       counterStyle: TextStyle(color: colors.onSurfaceVariant),
 
       // Enabled border
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colors.outline),
-        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.outline, width: 2),
+        borderRadius: BorderRadius.circular(11),
       ),
 
       // Focused border
       focusedBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colors.primary, width: 2),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(11),
       ),
 
       // Error border
       errorBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colors.error),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(11),
       ),
 
       // Error focused border
       focusedErrorBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colors.error, width: 2),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(11),
       ),
 
       // Disabled border
       disabledBorder: OutlineInputBorder(
         borderSide: BorderSide(color: colors.onSurface.withOpacity(.12)),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(11),
       ),
     );
   }

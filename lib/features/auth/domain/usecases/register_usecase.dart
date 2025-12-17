@@ -5,7 +5,7 @@ class RegisterUsecase {
 
   RegisterUsecase(this.repo);
 
-  Future<void> call(String email, String password) {
-    return repo.register(email, password);
+  Future<void> call(String email, String username, String password) {
+    return repo.register(email, username, password);
   }
 }

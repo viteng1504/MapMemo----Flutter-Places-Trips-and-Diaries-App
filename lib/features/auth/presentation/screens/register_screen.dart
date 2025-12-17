@@ -21,6 +21,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   late final TextEditingController emailController;
+  late final TextEditingController usernameController;
   late final TextEditingController passwordController;
   late final TextEditingController confirmPasswordController;
 
@@ -29,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // TODO: implement initState
     super.initState();
     emailController = TextEditingController();
+    usernameController = TextEditingController();
     passwordController = TextEditingController();
     confirmPasswordController = TextEditingController();
   }
@@ -36,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     emailController.dispose();
+    usernameController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -86,6 +89,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: false,
                         ),
 
+                        // username
+                        const SizedBox(height: 24),
+                        AuthTextField(
+                          hintText: "Enter your username",
+                          controller: usernameController,
+                          obscureText: false,
+                        ),
+
                         // password
                         const SizedBox(height: 24),
                         AuthTextField(
@@ -108,6 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onPressed: () {
                             context.read<RegisterCubit>().register(
                               emailController.text,
+                              usernameController.text,
                               passwordController.text,
                               confirmPasswordController.text,
                               context,

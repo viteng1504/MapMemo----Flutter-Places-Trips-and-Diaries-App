@@ -7,15 +7,27 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/map/map_service.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/user_position.dart';
+import '../../../../my_local_storage.dart';
+import '../../../auth/data/data_sources/remote/auth_api.dart';
+import '../../domain/entities/place_position.dart';
 import 'home_overlay_state.dart';
 
 class HomeOverlayCubit extends Cubit<HomeOverlayState> {
-  HomeOverlayCubit() : super(HomeOverlayState(places: [], mapbox: null));
+  final AuthApi _authApi;
+  HomeOverlayCubit(this._authApi)
+    : super(const HomeOverlayState(places: [], mapbox: null, username: ""));
 
   void onInitialMapBox(MapboxMap? map) {
     emit(state.copyWith(mapbox: map));
   }
+
+  Future<void> getUsername() async {
+    final username = await _authApi.getUsername();
+
+    emit(state.copyWith(username: username));
+  }
+
+  //--------------------------------------------
 
   Future<void> navigateToUserPos() async {
     final pos = await geo.Geolocator.getCurrentPosition(
@@ -30,7 +42,21 @@ class HomeOverlayCubit extends Cubit<HomeOverlayState> {
 
     MapService.instance.flyToUser(pos);
   }
+  //===================================================
 
+  Future<void> getPlaces() async {
+    final places = MyLocalStorage.places;
+
+    emit(state.copyWith(places: places));
+  }
+
+  //===================================================
+  Future<void> displayPlaceAnnotationsOnMap() async {
+    await MapService.instance.mapReady.future;
+    await MapService.instance.addPlaceAnnotations();
+  }
+
+  //===================================================
   void showLocationActionSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -59,11 +85,18 @@ class HomeOverlayCubit extends Cubit<HomeOverlayState> {
 
                   MapService.instance.flyToUser(pos);
 
-                  Navigator.pushNamed(
+                  final result = await Navigator.pushNamed(
                     context,
                     AppRoutes.placeDetails,
-                    arguments: UserPosition(pos.longitude, pos.latitude),
+                    arguments: PlacePosition(
+                      lng: pos.longitude,
+                      lat: pos.latitude,
+                    ),
                   );
+
+                  if (result == true) {
+                    emit(state.copyWith(places: MyLocalStorage.places));
+                  }
 
                   // TODO: thêm logic lưu vị trí
                 },
@@ -77,11 +110,18 @@ class HomeOverlayCubit extends Cubit<HomeOverlayState> {
                   color: AppColors.primary,
                 ),
                 title: const Text("Save position on map"),
-                onTap: () {
-                  // TODO: bật chế độ chọn vị trí
+                onTap: () async {
                   // MapService.instance.enableSelectMode();
-                  print("add  place");
-                  Navigator.pushNamed(context, AppRoutes.selectPlace);
+                  final result = await Navigator.pushNamed(
+                    context,
+                    AppRoutes.selectPlace,
+                  );
+
+                  if (result == true) {
+                    getPlaces();
+                    displayPlaceAnnotationsOnMap();
+                    Navigator.pop(context, true);
+                  }
                   // Navigator.pop(context);
                 },
               ),
@@ -91,4 +131,6 @@ class HomeOverlayCubit extends Cubit<HomeOverlayState> {
       },
     );
   }
+
+  //--------------------------------------------
 }

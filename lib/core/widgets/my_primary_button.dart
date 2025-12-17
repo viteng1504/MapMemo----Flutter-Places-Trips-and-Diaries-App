@@ -26,7 +26,7 @@ class _MyPrimaryButtonState extends State<MyPrimaryButton> {
         mainAxisAlignment: .center,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               widget.label,
               style: const TextStyle(

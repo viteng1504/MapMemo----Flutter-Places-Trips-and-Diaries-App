@@ -11,7 +11,7 @@ class AppColors {
   static const Color onSurfaceGray2 = Color(0xFFB5B5B5);
   static const Color onSurfaceGray3 = Color(0xFFE5E5E5);
 
-  static const Color border = Color(0x33FFFFFF);
+  static const Color border = Color(0xFFB5B5B5);
   // text color
   static const Color mainText = Color(0xFF333333);
   static const Color secondaryText = Color(0xFFFFFFDE);

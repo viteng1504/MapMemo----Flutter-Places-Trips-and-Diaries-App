@@ -6,4 +6,6 @@ class AppApi {
   static String get supabaseAnonKey => dotenv.env["SUPABASE_ANON_KEY"]!;
   //mapbox
   static String get mapboxAccessToken => dotenv.env["MAPBOX_ACCESS_TOKEN"]!;
+  //gemini
+  static String get geminiApiKey => dotenv.env["GEMINI_API_KEY"]!;
 }

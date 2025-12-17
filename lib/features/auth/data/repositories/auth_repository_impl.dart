@@ -15,8 +15,12 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> register(String email, String password) async {
-    await api.registerWithEmail(email: email, password: password);
+  Future<void> register(String email, String username, String password) async {
+    await api.registerWithEmail(
+      email: email,
+      username: username,
+      password: password,
+    );
   }
 
   @override

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/constants/app_images.dart';
+import '../../../../../core/services/map/map_service.dart';
+import '../../../domain/entities/place_entity.dart';
 import '../home_search_bar.dart';
 import 'home_category_selector.dart';
 import 'home_place_card.dart';
 
 class HomeSavedPlaces extends StatefulWidget {
-  const HomeSavedPlaces({super.key});
+  final List<PlaceEntity> placeList;
+
+  const HomeSavedPlaces({super.key, required this.placeList});
 
   @override
   _HomeSavedPlacesState createState() => _HomeSavedPlacesState();
@@ -59,15 +62,27 @@ class _HomeSavedPlacesState extends State<HomeSavedPlaces> {
         const HomeCategorySelector(),
 
         Column(
-          children: List.generate(5, (index) {
+          spacing: 10,
+
+          children: List.generate(widget.placeList.length, (index) {
+            final place = widget.placeList[index];
+            final image = place.images.isEmpty ? null : place.images[0];
+
+            final created = place.createdAt;
+            final dateStr = "${created.day}-${created.month}-${created.year}";
+
             return HomePlaceCard(
-              title: 'Eiffel Tower',
-              dateSaved: 'July 12, 2024',
-              location: 'Paris, France',
+              title: place.name,
+              dateSaved: dateStr,
+              location: place.address,
               distance: '8,942 km',
-              imagePath: AppImages.danang,
-              onPressed: () {
+              image: image,
+              onCardPressed: () {
                 // xử lý khi bấm nút
+              },
+              onNavigatePressed: () {
+                print("Navigate");
+                MapService.instance.flyToPlace(place.lng, place.lat);
               },
             );
           }),

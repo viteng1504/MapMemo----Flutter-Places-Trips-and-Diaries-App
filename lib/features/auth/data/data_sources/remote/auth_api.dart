@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/user_model.dart';
@@ -25,19 +24,20 @@ class AuthApi {
     return UserModel.fromSupabaseUser(user);
   }
 
-  //register
   Future<void> registerWithEmail({
     required String email,
+    required String username,
     required String password,
   }) async {
-    debugPrint("signup");
+    final res = await client.auth.signUp(email: email, password: password);
 
-    try {
-      await client.auth.signUp(email: email, password: password);
-    } catch (e) {
-      throw Exception("SignUp failed");
+    final user = res.user;
+    if (user == null) {
+      throw Exception('Sign up failed');
     }
-    // final user = res.user;
+
+    // insert username vào profiles
+    await client.from('profiles').insert({'id': user.id, 'username': username});
   }
 
   Future<void> logout() async {
@@ -45,8 +45,21 @@ class AuthApi {
   }
 
   Future<UserModel?> getCurrentUser() async {
-    final user = client.auth.currentUser;
+    final User? user = client.auth.currentUser;
     if (user == null) return null;
     return UserModel.fromSupabaseUser(user);
+  }
+
+  Future<String?> getUsername() async {
+    final user = client.auth.currentUser;
+    if (user == null) return null;
+
+    final data = await client
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+    return data['username'];
   }
 }

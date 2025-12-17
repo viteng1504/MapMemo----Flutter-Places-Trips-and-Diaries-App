@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
+import '../../../features/places/domain/entities/place_position.dart';
 import '../../constants/app_icons.dart';
 
 class AddPlaceMapService {
@@ -13,12 +14,19 @@ class AddPlaceMapService {
   PointAnnotationManager? _pointManager;
   PointAnnotation? _currentMarker;
 
+  bool get isSelectOnMap => _currentMarker != null;
+
   void setMap(MapboxMap m) async {
     map = m;
-    map!.gestures.updateSettings(GesturesSettings(pitchEnabled: false));
+    map!.gestures.updateSettings(
+      GesturesSettings(
+        pitchEnabled: false,
+        pinchToZoomEnabled: true,
+      ),
+    );
     map!.scaleBar.updateSettings(
       ScaleBarSettings(
-        enabled: false, // ✅ tắt scale bar
+        enabled: false, // tắt scale bar
       ),
     );
     // onmap
@@ -46,10 +54,14 @@ class AddPlaceMapService {
     );
   }
 
-  Future<void> onSelectCurrentPlace() async {
-    final pos = await geo.Geolocator.getCurrentPosition(
-      desiredAccuracy: geo.LocationAccuracy.high,
-    );
+  Future<PlacePosition> onGetSelectPlacePosition() async {
+    // if (_currentMarker == null) {
+    //   throw Exception("Marker chưa được chọn!");
+    // }
+
+    final pos = _currentMarker!.geometry.coordinates;
+
+    return PlacePosition(lat: pos.lat.toDouble(), lng: pos.lng.toDouble());
   }
 
   void onSelectPlaceOnMap(MapContentGestureContext context) async {
@@ -71,7 +83,7 @@ class AddPlaceMapService {
       _currentMarker = null;
     }
 
-    final ByteData bytes = await rootBundle.load(AppIcons.facebook);
+    final ByteData bytes = await rootBundle.load(AppIcons.location);
     final Uint8List imageData = bytes.buffer.asUint8List();
 
     // Create a PointAnnotationOptions
@@ -93,7 +105,7 @@ class AddPlaceMapService {
       PointAnnotationOptions(
         geometry: Point(coordinates: Position(pos.lng, pos.lat)),
         image: imageData,
-        iconSize: 0.5,
+        iconSize: 1,
       ),
     );
 
