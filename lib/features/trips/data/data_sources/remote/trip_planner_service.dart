@@ -35,4 +35,19 @@ class TripPlannerService {
         .eq('id', stopId)
         .eq('user_id', user.id); // 🔒 double safety
   }
+
+  //update stop nights===========================================
+  Future<void> updateStopNights({
+    required String stopId,
+    required int newNights,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw Exception('Not logged in');
+
+    await client
+        .from('planner_stops')
+        .update({'nights': newNights < 0 ? 0 : newNights})
+        .eq('id', stopId)
+        .eq('user_id', user.id);
+  }
 }

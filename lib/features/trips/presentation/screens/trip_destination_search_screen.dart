@@ -33,28 +33,51 @@ class _TripDestinationSearchScreenState
     setState(() => isLoading = true);
 
     try {
-      final url =
-          "https://api.mapbox.com/geocoding/v5/mapbox.places/$query.json"
-          "?autocomplete=true&limit=10&language=en&access_token=$mapboxToken";
+      final url = Uri.https(
+        'api.mapbox.com',
+        '/geocoding/v5/mapbox.places/$query.json',
+        {
+          'autocomplete': 'true',
+          'limit': '10',
+          'language': 'en',
+          'access_token': mapboxToken,
+        },
+      );
 
-      final res = await http.get(Uri.parse(url));
+      final res = await http.get(url);
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-
-        final List features = data["features"] ?? [];
+        final List features = data['features'] ?? [];
 
         setState(() {
           results = features.map((item) {
-            final ctx = item["context"] ?? [];
+            final ctx = item['context'] as List? ?? [];
 
-            // lấy đúng country context
-            final countryContext = ctx.firstWhere(
-              (c) => c["id"].toString().startsWith("country"),
-              orElse: () => null,
-            );
+            // lấy country context
+            Map<String, dynamic>? countryContext;
+            for (final c in ctx) {
+              if (c is Map<String, dynamic> &&
+                  c['id'].toString().startsWith('country')) {
+                countryContext = c;
+                break;
+              }
+            }
 
-            final isoCode = countryContext?["short_code"]; // ví dụ: "vn", "hr"
+            final isoCode = countryContext?['short_code']?.toString();
+
+            // lấy tọa độ
+            double? lng;
+            double? lat;
+
+            final geometry = item['geometry'];
+            if (geometry is Map<String, dynamic>) {
+              final coords = geometry['coordinates'];
+              if (coords is List && coords.length >= 2) {
+                lng = (coords[0] as num).toDouble();
+                lat = (coords[1] as num).toDouble();
+              }
+            }
 
             return {
               "name": item["text"] ?? "",
@@ -63,6 +86,8 @@ class _TripDestinationSearchScreenState
               "icon": isoCode != null
                   ? "https://flagsapi.com/${isoCode.toUpperCase()}/flat/32.png"
                   : null,
+              "lat": lat,
+              "lng": lng,
             };
           }).toList();
         });

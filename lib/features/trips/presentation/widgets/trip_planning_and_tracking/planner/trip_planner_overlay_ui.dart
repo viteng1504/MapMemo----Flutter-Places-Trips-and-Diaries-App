@@ -7,12 +7,12 @@ import 'start_plan_trip.dart';
 
 class TripPlannerOverlayUi extends StatefulWidget {
   final VoidCallback onAddDestinationTap;
-  final VoidCallback onPlaceTap;
+  final VoidCallback onShowPlaceTap;
 
   const TripPlannerOverlayUi({
     super.key,
     required this.onAddDestinationTap,
-    required this.onPlaceTap,
+    required this.onShowPlaceTap,
   });
 
   @override
@@ -59,8 +59,9 @@ class _TripPlannerOverlayUiState extends State<TripPlannerOverlayUi> {
 
   Future<void> _onManualBuildItinery() async {
     setState(() {
-      hasPlaces = true;
+      // hasPlaces = true;
     });
+    widget.onAddDestinationTap();
   }
 
   //Has places fuction

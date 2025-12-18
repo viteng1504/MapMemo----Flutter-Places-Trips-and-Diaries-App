@@ -6,7 +6,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/map/trip_plan_map_service.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/planner/planner_stop_entity.dart';
+import '../../domain/entities/planner/planner_place_entity.dart';
 import '../widgets/trip_planning_and_tracking/planner/planner_add_destination_overlay_ui.dart';
 import '../widgets/trip_planning_and_tracking/planner/planner_place_overlay_ui.dart';
 import '../widgets/trip_planning_and_tracking/planner/trip_planner_overlay_ui.dart';
@@ -22,28 +22,37 @@ class TripPlanningAndTrackingScreen extends StatefulWidget {
 
 enum BaseTab { planner, track }
 
-enum OverlayType { addDestination, place }
+enum OverlayType { plannerAddDestination, plannerPlace }
 
 class _TripPlanningAndTrackingScreenState
     extends State<TripPlanningAndTrackingScreen> {
   final TripPlanMapService _mapService = TripPlanMapService();
+  PlannerPlaceEntity? _plannerPlaceEntity = const PlannerPlaceEntity(
+    country: 'Vietnam',
+    countryIconUrl: 'https://picsum.photos/400/300?random=1',
+    name: 'Da Nang',
+    lat: 16.0544,
+    lng: 108.2022,
+  );
+
+  final int _placeIndex = 0;
+  bool plannerPlaceLoading = false;
 
   BaseTab _currentTab = BaseTab.planner;
-  final List<OverlayType> _overlayStack = [OverlayType.addDestination];
+  final List<OverlayType> _overlayStack = [OverlayType.plannerAddDestination];
 
   bool get _hasOverlay => _overlayStack.isNotEmpty;
   OverlayType? get _topOverlay => _hasOverlay ? _overlayStack.last : null;
 
   void _showOverlay(OverlayType type) {
     setState(() => _overlayStack.add(type));
+    _mapService.flyToUser();
   }
 
   void _popOverlay() {
     if (_overlayStack.isEmpty) return;
     setState(() => _overlayStack.removeLast());
   }
-
-  
 
   final placesGeoJson = {
     "type": "FeatureCollection",
@@ -74,6 +83,52 @@ class _TripPlanningAndTrackingScreenState
       },
     ],
   };
+
+  Future<void> _onSelectOnMap(MapContentGestureContext mapContext) async {
+    print("planner tap on map=============");
+    if (_topOverlay != OverlayType.plannerPlace) {
+      _showOverlay(OverlayType.plannerPlace);
+    }
+
+    setState(() {
+      plannerPlaceLoading = true;
+    });
+    final place = await _mapService.onSelectPlaceOnMap(mapContext);
+
+    if (!mounted) return;
+    setState(() {
+      _plannerPlaceEntity = place;
+      plannerPlaceLoading = false;
+    });
+  }
+
+  Future<void> _onSearchLocationTap() async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.tripDestinationSearch,
+    );
+
+    if (result != null) {
+      final map = result as Map<String, dynamic>;
+      final resultPlace = PlannerPlaceEntity(
+        country: map['country'],
+        countryIconUrl: map['icon'],
+        name: map['full'],
+        lat: map['lat'],
+        lng: map['lng'],
+      );
+      setState(() {
+        // if (des == Destination.start) {
+        //   start = map["name"];
+        //   startController.text = start;
+        // } else {
+        //   end = map["name"];
+        //   endController.text = end;
+        // }
+        _plannerPlaceEntity = resultPlace;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +169,9 @@ class _TripPlanningAndTrackingScreenState
             Positioned.fill(
               child: MapWidget(
                 key: const ValueKey("map"),
+                onTapListener: (mapContext) {
+                  _onSelectOnMap(mapContext);
+                },
                 onMapCreated: (map) async {
                   setState(() {
                     _mapService.setMap(map);
@@ -139,11 +197,9 @@ class _TripPlanningAndTrackingScreenState
                       center: Point(
                         coordinates: Position(pos.longitude, pos.latitude),
                       ),
-                      zoom: 14,
+                      zoom: 11,
                     ),
                   );
-
-                  _mapService.addOrMoveMarker(Position(108.2022, 16.0544));
 
                   await _mapService.map?.style.addSource(
                     GeoJsonSource(
@@ -198,7 +254,7 @@ class _TripPlanningAndTrackingScreenState
 
             Positioned.fill(
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 150),
+                duration: const Duration(milliseconds: 200),
                 transitionBuilder: (child, anim) {
                   final offsetTween = Tween<Offset>(
                     begin: const Offset(0, 0.08),
@@ -224,9 +280,9 @@ class _TripPlanningAndTrackingScreenState
     // title ưu tiên overlay
     if (_hasOverlay) {
       switch (_topOverlay!) {
-        case OverlayType.addDestination:
+        case OverlayType.plannerAddDestination:
           return "Add next destination";
-        case OverlayType.place:
+        case OverlayType.plannerPlace:
           return "Place";
       }
     }
@@ -240,49 +296,41 @@ class _TripPlanningAndTrackingScreenState
         // ví dụ: trong TripPlannerOverlayUi bạn bắn callback để mở overlay
         return TripPlannerOverlayUi(
           key: const ValueKey("planner"),
-          onAddDestinationTap: () => _showOverlay(OverlayType.addDestination),
-          onPlaceTap: () => _showOverlay(OverlayType.place),
+          onAddDestinationTap: () =>
+              _showOverlay(OverlayType.plannerAddDestination),
+          onShowPlaceTap: () => _showOverlay(OverlayType.plannerPlace),
         );
       case BaseTab.track:
         return TripTrackingOverlayUi(
           key: const ValueKey("track"),
 
-          onPlaceTap: () => _showOverlay(OverlayType.place),
+          onPlaceTap: () => _showOverlay(OverlayType.plannerPlace),
         );
     }
   }
 
   Widget _buildOverlayUI(OverlayType overlay) {
     switch (overlay) {
-      case OverlayType.addDestination:
+      case OverlayType.plannerAddDestination:
         return PlannerAddDestinationOverlayUi(
           key: const ValueKey("add_destination"),
           onGetSuggestions: () {},
-          onSearchTap: () async {
-            final result = await Navigator.pushNamed(
-              context,
-              AppRoutes.tripDestinationSearch,
-            );
-
-            if (result != null) {
-              final map = result as Map<String, dynamic>;
-              print(map["name"]);
-              setState(() {
-                // if (des == Destination.start) {
-                //   start = map["name"];
-                //   startController.text = start;
-                // } else {
-                //   end = map["name"];
-                //   endController.text = end;
-                // }
-              });
-            }
-          },
+          onSearchTap: () async {},
         );
-      case OverlayType.place:
+      case OverlayType.plannerPlace:
         return PlannerPlaceOverlayUi(
           key: const ValueKey("place"),
           onClose: _popOverlay,
+          place:
+              _plannerPlaceEntity ??
+              const PlannerPlaceEntity(
+                country: 'Unknown',
+                countryIconUrl: 'https://picsum.photos/400/300?random=1',
+                name: 'Unknown',
+                lat: 16.0544,
+                lng: 108.2022,
+              ),
+          isLoading: plannerPlaceLoading,
         );
     }
   }
