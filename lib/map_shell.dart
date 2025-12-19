@@ -15,7 +15,10 @@ import 'core/widgets/my_bottom_app_bar.dart';
 import 'features/auth/data/data_sources/remote/auth_api.dart';
 import 'features/places/presentation/cubits/home_overlay_cubit.dart';
 import 'features/places/presentation/screens/home_overlay_ui.dart';
+import 'features/trips/data/data_sources/remote/trip_service.dart';
+import 'features/trips/data/models/trip_model.dart';
 import 'features/trips/presentation/screens/trips_overlay_ui.dart';
+import 'my_local_storage.dart';
 
 enum CurrentScreen { home, trips, diaries }
 
@@ -28,6 +31,7 @@ class MapShell extends StatefulWidget {
 
 class _MapShellState extends State<MapShell> {
   final client = Supabase.instance.client;
+  late TripService tripService;
   // MapboxMap? mapbox;
   Map<dynamic, String> tabsName = {0: "Home", 1: "Trips"};
   int currentTab = 0;
@@ -40,6 +44,27 @@ class _MapShellState extends State<MapShell> {
     Future.delayed(Duration.zero, () {
       Utils.checkLocationPermission();
     });
+
+    getTrips();
+  }
+
+  Future<void> getTrips() async {
+    tripService = TripService(client);
+    final List<TripModel> tripModels = await tripService.getMyTrips();
+
+    MyLocalStorage.trips = tripModels;
+
+    print('========== TRIPS ==========');
+    for (final trip in MyLocalStorage.trips) {
+      print(
+        'id: ${trip.id} | '
+        'name: ${trip.name} | '
+        'start: ${trip.startDate} | '
+        'days: ${trip.days} | '
+        'image: ${trip.imageUrl}',
+      );
+    }
+    print('===========================');
   }
 
   void onNavIconPressed(int index) {

@@ -21,6 +21,7 @@ class AddTripScreen extends StatefulWidget {
 
 class _AddTripScreenState extends State<AddTripScreen> {
   final TripService _tripService = TripService(Supabase.instance.client);
+  bool isLoading = false;
 
   final ImagePicker picker = ImagePicker();
   DateTime? startDate;
@@ -150,6 +151,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
           validateBeforeCreate(context);
         },
         label: "Create Trip",
+        isLoading: isLoading,
       ),
     );
   }
@@ -188,10 +190,6 @@ class _AddTripScreenState extends State<AddTripScreen> {
     });
   }
 
-  static String _fmt(DateTime? d) {
-    if (d == null) return "Optional";
-    return "${d.day} Th${d.month}, ${d.year}";
-  }
 
   Future<void> validateBeforeCreate(BuildContext context) async {
     bool nameError = tripName.trim().isEmpty;
@@ -212,6 +210,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
     setState(() {
       showNameError = nameError;
       showDateError = dateError;
+      isLoading = true;
     });
 
     if (nameError || dateError) return;
@@ -232,12 +231,15 @@ class _AddTripScreenState extends State<AddTripScreen> {
         image: coverImageBytes,
       );
 
-      await _tripService.addTrip(trip);
+      final tripModel = await _tripService.addTrip(trip);
 
       if (!context.mounted) return;
       print("=========================add trip success");
+      setState(() {
+        isLoading = false;
+      });
 
-      Navigator.pop(context, trip);
+      Navigator.pop(context, tripModel);
     }
 
     // Navigator.pushNamed(

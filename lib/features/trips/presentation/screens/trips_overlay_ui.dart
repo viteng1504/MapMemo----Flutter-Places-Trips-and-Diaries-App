@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/my_primary_button.dart';
+import '../../../../my_local_storage.dart';
+import '../../data/models/trip_model.dart';
 import '../cubits/trip_overlay_cubit.dart';
 import '../cubits/trip_overlay_state.dart';
 import '../widgets/trip/drag_handle.dart';
@@ -27,25 +29,27 @@ class _TripsOverlayUiState extends State<TripsOverlayUi> {
   }
 
   Future<void> showTripTypeBottomSheet(BuildContext context) async {
-    final trip = await showModalBottomSheet(
+    final tripModel = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const TripTypeBottomSheet(),
     );
 
-    if (!context.mounted || trip == null) return;
+    if (!context.mounted || tripModel == null) return;
 
     Navigator.pushNamed(
       context,
       AppRoutes.tripPlanningAndTracking,
-      arguments: trip,
+      arguments: tripModel,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final List<TripModel> tripModels = MyLocalStorage.trips;
 
     return BlocProvider(
       create: (context) => TripOverlayCubit()..zoomOutMap(),
@@ -105,10 +109,15 @@ class _TripsOverlayUiState extends State<TripsOverlayUi> {
 
                         Column(
                           spacing: 10,
-                          children: List.generate(10, (index) {
-                            return const TripCard();
+                          children: List.generate(tripModels.length, (index) {
+                            final trip = tripModels[index];
+
+                            return TripCard(trip: trip);
                           }),
                         ),
+
+                        const SizedBox(height: 80),
+
                       ],
                     ),
                   );

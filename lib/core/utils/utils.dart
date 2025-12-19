@@ -22,4 +22,9 @@ class Utils {
 
     return false;
   }
+
+  static String fmt(DateTime? d) {
+    if (d == null) return "Optional";
+    return "${d.day} Th${d.month}, ${d.year}";
+  }
 }

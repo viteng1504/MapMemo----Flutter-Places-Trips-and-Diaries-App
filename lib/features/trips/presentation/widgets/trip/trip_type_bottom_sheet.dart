@@ -18,9 +18,9 @@ class _TripTypeBottomSheetState extends State<TripTypeBottomSheet> {
   Future<void> onContinue(BuildContext context) async {
     print("=========================continue");
 
-    final trip = await Navigator.pushNamed(context, AppRoutes.addTrip);
+    final tripModel = await Navigator.pushNamed(context, AppRoutes.addTrip);
     if (!context.mounted) return;
-    Navigator.pop(context, trip);
+    Navigator.pop(context, tripModel);
   }
 
   @override

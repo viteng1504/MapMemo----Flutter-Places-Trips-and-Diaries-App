@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import 'features/places/domain/entities/place_entity.dart';
+import 'features/trips/data/models/trip_model.dart';
 
 class MyLocalStorage {
   static List<PlaceEntity> places = [
@@ -42,6 +43,8 @@ class MyLocalStorage {
       createdAt: DateTime.now(),
     ),
   ];
+
+  static List<TripModel> trips = [];
 
   static void printPlacesData() {
     for (int i = 0; i < MyLocalStorage.places.length; i++) {

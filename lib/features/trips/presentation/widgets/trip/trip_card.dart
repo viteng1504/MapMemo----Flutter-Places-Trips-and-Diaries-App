@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/constants/app_images.dart';
 import '../../../../../core/constants/app_routes.dart';
+import '../../../../../core/utils/utils.dart';
+import '../../../data/models/trip_model.dart';
 
 class TripCard extends StatelessWidget {
-  const TripCard({super.key});
+  final TripModel trip;
+  const TripCard({super.key, required this.trip});
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +19,10 @@ class TripCard extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          image: const DecorationImage(
-            image: AssetImage(AppImages.danang), // ảnh background của bạn
+          image: DecorationImage(
+            image: trip.imageUrl != null
+                ? NetworkImage(trip.imageUrl!)
+                : const AssetImage(AppImages.danang), // ảnh background của bạn
             fit: BoxFit.cover,
           ),
         ),
@@ -34,19 +39,21 @@ class TripCard extends StatelessWidget {
             ),
           ),
           padding: const EdgeInsets.all(20),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 70),
+
               // Title
               Text(
-                "Pasttest",
-                style: TextStyle(
+                trip.name,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 20),
+              // const SizedBox(height: 10),
 
               // Bottom row
               Row(
@@ -57,12 +64,11 @@ class TripCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "tháng 11",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                      Text(
-                        "2025",
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                        Utils.fmt(trip.startDate),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
@@ -71,10 +77,13 @@ class TripCard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        "1",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        trip.days.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
-                      Text(
+                      const Text(
                         "DAYS",
                         style: TextStyle(color: Colors.white70, fontSize: 11),
                       ),
@@ -82,21 +91,21 @@ class TripCard extends StatelessWidget {
                   ),
 
                   // Kilometers
-                  Column(
-                    children: [
-                      Text(
-                        "0",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      Text(
-                        "KILOMETERS",
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
+                  // const Column(
+                  //   children: [
+                  //     Text(
+                  //       "0",
+                  //       style: TextStyle(color: Colors.white, fontSize: 16),
+                  //     ),
+                  //     Text(
+                  //       "KILOMETERS",
+                  //       style: TextStyle(color: Colors.white70, fontSize: 11),
+                  //     ),
+                  //   ],
+                  // ),
 
                   // People Icon
-                  Icon(Icons.group, color: Colors.white, size: 24),
+                  // const Icon(Icons.group, color: Colors.white, size: 24),
                 ],
               ),
             ],

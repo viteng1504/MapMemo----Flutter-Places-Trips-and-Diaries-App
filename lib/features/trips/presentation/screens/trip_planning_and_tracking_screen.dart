@@ -35,6 +35,8 @@ class _TripPlanningAndTrackingScreenState
     lng: 108.2022,
   );
 
+  // List<P
+
   final int _placeIndex = 0;
   bool plannerPlaceLoading = false;
 
@@ -44,9 +46,14 @@ class _TripPlanningAndTrackingScreenState
   bool get _hasOverlay => _overlayStack.isNotEmpty;
   OverlayType? get _topOverlay => _hasOverlay ? _overlayStack.last : null;
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   void _showOverlay(OverlayType type) {
     setState(() => _overlayStack.add(type));
-    _mapService.flyToUser();
   }
 
   void _popOverlay() {
@@ -83,7 +90,7 @@ class _TripPlanningAndTrackingScreenState
       },
     ],
   };
-
+  // planner select on map============================================================
   Future<void> _onSelectOnMap(MapContentGestureContext mapContext) async {
     print("planner tap on map=============");
     if (_topOverlay != OverlayType.plannerPlace) {
@@ -102,6 +109,7 @@ class _TripPlanningAndTrackingScreenState
     });
   }
 
+  // planner search bar tap============================================================
   Future<void> _onSearchLocationTap() async {
     final result = await Navigator.pushNamed(
       context,
@@ -110,23 +118,28 @@ class _TripPlanningAndTrackingScreenState
 
     if (result != null) {
       final map = result as Map<String, dynamic>;
+
+      final lat = map['lat'] as double;
+      final lng = map['lng'] as double;
+      final name = map['full'] as String;
       final resultPlace = PlannerPlaceEntity(
         country: map['country'],
         countryIconUrl: map['icon'],
         name: map['full'],
-        lat: map['lat'],
-        lng: map['lng'],
+        lat: lat,
+        lng: lng,
       );
       setState(() {
-        // if (des == Destination.start) {
-        //   start = map["name"];
-        //   startController.text = start;
-        // } else {
-        //   end = map["name"];
-        //   endController.text = end;
-        // }
         _plannerPlaceEntity = resultPlace;
+        _mapService.plannerShowPointOnMap(
+          index: 0,
+          displayName: name,
+          lng: lng,
+          lat: lat,
+        );
+        _mapService.flyToPosition(lng, lat);
       });
+      _showOverlay(OverlayType.plannerPlace);
     }
   }
 
@@ -234,20 +247,20 @@ class _TripPlanningAndTrackingScreenState
                   );
 
                   // tên
-                  await _mapService.map?.style.addLayer(
-                    SymbolLayer(
-                      id: "place-name-layer",
-                      sourceId: "places-source",
-                      textField: "{name}",
-                      textSize: 12,
-                      textColor: Colors.white.value,
-                      textHaloColor: Colors.black.value,
-                      textHaloWidth: 1.2,
-                      textAnchor: TextAnchor.TOP,
-                      textOffset: [0, 1.4],
-                      textAllowOverlap: true,
-                    ),
-                  );
+                  // await _mapService.map?.style.addLayer(
+                  //   SymbolLayer(
+                  //     id: "place-name-layer",
+                  //     sourceId: "places-source",
+                  //     textField: "{name}",
+                  //     textSize: 12,
+                  //     textColor: Colors.white.value,
+                  //     textHaloColor: Colors.black.value,
+                  //     textHaloWidth: 1.2,
+                  //     textAnchor: TextAnchor.TOP,
+                  //     textOffset: [0, 1.4],
+                  //     textAllowOverlap: true,
+                  //   ),
+                  // );
                 },
               ),
             ),
@@ -290,14 +303,16 @@ class _TripPlanningAndTrackingScreenState
     return _currentTab == BaseTab.planner ? "Planner" : "Track";
   }
 
+  //base tab
   Widget _buildBaseTabUI(BaseTab tab) {
     switch (tab) {
       case BaseTab.planner:
-        // ví dụ: trong TripPlannerOverlayUi bạn bắn callback để mở overlay
         return TripPlannerOverlayUi(
           key: const ValueKey("planner"),
-          onAddDestinationTap: () =>
-              _showOverlay(OverlayType.plannerAddDestination),
+          onAddDestinationTap: () {
+            _showOverlay(OverlayType.plannerAddDestination);
+            _mapService.flyToUser();
+          },
           onShowPlaceTap: () => _showOverlay(OverlayType.plannerPlace),
         );
       case BaseTab.track:
@@ -309,13 +324,16 @@ class _TripPlanningAndTrackingScreenState
     }
   }
 
+  // Overlay UI
   Widget _buildOverlayUI(OverlayType overlay) {
     switch (overlay) {
       case OverlayType.plannerAddDestination:
         return PlannerAddDestinationOverlayUi(
           key: const ValueKey("add_destination"),
           onGetSuggestions: () {},
-          onSearchTap: () async {},
+          onSearchTap: () async {
+            _onSearchLocationTap();
+          },
         );
       case OverlayType.plannerPlace:
         return PlannerPlaceOverlayUi(

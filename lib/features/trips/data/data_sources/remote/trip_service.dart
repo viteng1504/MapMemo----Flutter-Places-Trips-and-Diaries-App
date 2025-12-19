@@ -3,25 +3,23 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../domain/entities/trip_entity.dart';
+import '../../models/trip_model.dart';
 
 class TripService {
   final SupabaseClient client;
 
   TripService(this.client);
 
-  Future<void> addTrip(TripEntity trip) async {
-    print("=========================add trip");
+  Future<TripModel> addTrip(TripEntity trip) async {
     final user = client.auth.currentUser;
     if (user == null) {
       throw Exception('Not logged in');
     }
 
-    // (Nếu có upload ảnh thì upload trước và lấy imageUrl)
     String? imageUrl;
+
     if (trip.image != null) {
       final path = 'trips/${user.id}/${trip.id}.jpg';
-
-      print("=========================add trip1");
 
       await client.storage
           .from('trip_images')
@@ -33,33 +31,41 @@ class TripService {
               upsert: true,
             ),
           );
-      print("=========================add trip2");
 
       imageUrl = client.storage.from('trip_images').getPublicUrl(path);
     }
-    print("=========================add trip3");
 
-    await client.from('trips').insert({
-      'id': trip.id,
-      'user_id': user.id, // ✅ gắn theo user
-      'name': trip.name,
-      'summary': trip.summary,
-      'start_date': trip.startDate.toIso8601String(),
-      'days': trip.days,
-      'image_url': imageUrl,
-    });
+    final response = await client
+        .from('trips')
+        .insert({
+          'id': trip.id,
+          'user_id': user.id,
+          'name': trip.name,
+          'summary': trip.summary,
+          'start_date': trip.startDate.toIso8601String(),
+          'days': trip.days,
+          'image_url': imageUrl,
+        })
+        .select()
+        .single();
+
+    return TripModel.fromJson(response);
   }
 
   // get trips ==========================================================
-  Future<List<Map<String, dynamic>>> getMyTrips() async {
+  Future<List<TripModel>> getMyTrips() async {
     final user = client.auth.currentUser;
-    if (user == null) throw Exception('Not logged in');
+    if (user == null) {
+      throw Exception('Not logged in');
+    }
 
-    return await client
+    final response = await client
         .from('trips')
         .select()
-        .eq('user_id', user.id) // ✅ chỉ lấy của user này
-        .order('created_at', ascending: false);
+        .eq('user_id', user.id)
+        .order('start_date', ascending: false);
+
+    return (response as List).map((json) => TripModel.fromJson(json)).toList();
   }
 
   // update trip ==========================================================

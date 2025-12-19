@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -54,6 +55,26 @@ class TripPlanMapService {
     );
   }
 
+  Future<void> flyToPosition(num lng, num lat) async {
+    if (map == null) return;
+
+    final latLng = Point(coordinates: Position(lng, lat));
+
+    // 1️⃣ Zoom out nhanh
+    await map!.flyTo(
+      CameraOptions(
+        zoom: 6, // zoom out
+      ),
+      MapAnimationOptions(duration: 3000),
+    );
+
+    // 2️⃣ Zoom in + bay tới điểm
+    await map!.flyTo(
+      CameraOptions(center: latLng, zoom: 11),
+      MapAnimationOptions(duration: 2400),
+    );
+  }
+
   Future<PlacePosition> onGetSelectPlacePosition() async {
     // if (_currentMarker == null) {
     //   throw Exception("Marker chưa được chọn!");
@@ -62,6 +83,127 @@ class TripPlanMapService {
     final pos = _currentMarker!.geometry.coordinates;
 
     return PlacePosition(lat: pos.lat.toDouble(), lng: pos.lng.toDouble());
+  }
+
+  // Select on map========================================================================================
+  final String _sourceId = "places-source";
+  final String _circleLayerId = "place-circle-layer";
+  final String _indexLayerId = "place-index-layer";
+  final String _nameLayerId = "place-name-layer";
+
+  final List<Map<String, dynamic>> features = [
+    {
+      "type": "Feature",
+      "properties": {"index": 1, "name": "Nana Pickleball"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [108.2068, 16.0471],
+      },
+    },
+    {
+      "type": "Feature",
+      "properties": {"index": 2, "name": "Dragon Bridge"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [108.2272, 16.0614],
+      },
+    },
+    {
+      "type": "Feature",
+      "properties": {"index": 3, "name": "My Khe Beach"},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [108.2471, 16.0545],
+      },
+    },
+  ];
+  Map<String, dynamic>? _tempFeature;
+  int _counter = 0;
+  bool _styleReady = false;
+
+  Future<void> _updatePlacesSource() async {
+    if (map == null) return;
+
+    final newFeature = [...features, _tempFeature];
+    _tempFeature = null;
+
+    final fc = {"type": "FeatureCollection", "features": newFeature};
+
+    await map!.style.setStyleSourceProperty(_sourceId, "data", fc);
+  }
+
+  Future<void> ensurePlaceLayers() async {
+    if (map == null) return;
+    final style = map!.style;
+
+    // Nếu đã tạo rồi thì thôi
+    if (_styleReady) return;
+
+    // Source
+    final hasSource = await style.styleSourceExists(_sourceId);
+    if (!hasSource) {
+      await style.addSource(
+        GeoJsonSource(
+          id: _sourceId,
+          data: jsonEncode({"type": "FeatureCollection", "features": []}),
+        ),
+      );
+    }
+
+    // Circle layer
+    if (!await style.styleLayerExists(_circleLayerId)) {
+      await style.addLayer(
+        CircleLayer(
+          id: _circleLayerId,
+          sourceId: _sourceId,
+          circleRadius: 12,
+          circleColor: Colors.blue.value,
+          circleStrokeColor: Colors.white.value,
+          circleStrokeWidth: 2,
+        ),
+      );
+    }
+
+    // Index text (số)
+    if (!await style.styleLayerExists(_indexLayerId)) {
+      await style.addLayer(
+        SymbolLayer(
+          id: _indexLayerId,
+          sourceId: _sourceId,
+          // ✅ Khuyên dùng expression để chắc chắn là string
+          textFieldExpression: [
+            "to-string",
+            ["get", "index"],
+          ],
+          textSize: 14,
+          textColor: Colors.white.value,
+          textHaloColor: Colors.black.value,
+          textHaloWidth: 1.5,
+          textAnchor: TextAnchor.CENTER,
+          textAllowOverlap: true,
+        ),
+      );
+    }
+
+    // Name text (tên dưới)
+    // if (!await style.styleLayerExists(_nameLayerId)) {
+    //   await style.addLayer(
+    //     SymbolLayer(
+    //       id: _nameLayerId,
+    //       sourceId: _sourceId,
+    //       textField: "{name}",
+    //       textSize: 12,
+    //       textColor: Colors.white.value,
+    //       textHaloColor: Colors.black.value,
+    //       textHaloWidth: 1.2,
+    //       textAnchor: TextAnchor.TOP,
+    //       textOffset: [0, 1.4],
+    //       textAllowOverlap: true,
+    //     ),
+    //   );
+    // }
+
+    _styleReady = true;
   }
 
   Future<PlannerPlaceEntity?> onSelectPlaceOnMap(
@@ -80,10 +222,35 @@ class TripPlanMapService {
     // await _setMarker(lat: lat, lng: lng);
 
     // 3) Call Mapbox reverse geocoding
-    final place = await _reverseGeocode(lat: lat, lng: lng);
+    final place = await reverseGeocode(lat: lat, lng: lng);
 
     print("place info============================================");
     print(place.toString());
+    final displayName = place?.name ?? "Unknown";
+
+    // Tăng số thứ tự
+    _counter++;
+
+    // Add feature mới
+    // _features.add({
+    //   "type": "Feature",
+    //   "properties": {"index": _counter, "name": displayName},
+    //   "geometry": {
+    //     "type": "Point",
+    //     "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
+    //   },
+    // });
+    _tempFeature = {
+      "type": "Feature",
+      "properties": {"index": _counter, "name": displayName},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
+      },
+    };
+
+    // Update source để map render marker + text
+    await _updatePlacesSource();
 
     final latLng = Point(coordinates: Position(lng, lat));
     map!.flyTo(
@@ -94,7 +261,40 @@ class TripPlanMapService {
     return place;
   }
 
-  Future<void> _setMarker({required num lat, required num lng}) async {
+  Future<void> plannerShowPointOnMap({
+    required int index,
+    required String displayName,
+    required double lng,
+    required double lat,
+  }) async {
+    // features.add({
+    //   "type": "Feature",
+    //   "properties": {"index": index, "name": displayName},
+    //   "geometry": {
+    //     "type": "Point",
+    //     "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
+    //   },
+    // });
+    _tempFeature = {
+      "type": "Feature",
+      "properties": {"index": index, "name": displayName},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
+      },
+    };
+
+    // Update source để map render marker + text
+    await _updatePlacesSource();
+
+    final latLng = Point(coordinates: Position(lng, lat));
+    map!.flyTo(
+      CameraOptions(center: latLng, zoom: 12),
+      MapAnimationOptions(duration: 1000),
+    );
+  }
+
+  Future<void> setMarker({required num lat, required num lng}) async {
     final pm = _pointManager;
     if (pm == null) return;
 
@@ -112,9 +312,9 @@ class TripPlanMapService {
     );
   }
 
-  final _mapboxToken = AppApi.mapboxAccessToken;
+  final mapboxToken = AppApi.mapboxAccessToken;
 
-  Future<PlannerPlaceEntity?> _reverseGeocode({
+  Future<PlannerPlaceEntity?> reverseGeocode({
     required double lng,
     required double lat,
   }) async {
@@ -122,7 +322,7 @@ class TripPlanMapService {
       'api.mapbox.com',
       '/geocoding/v5/mapbox.places/$lng,$lat.json',
       {
-        'access_token': _mapboxToken,
+        'access_token': mapboxToken,
         'limit': '1',
         // 'language': 'vi', // nếu bạn muốn ưu tiên tiếng Việt
       },
@@ -143,7 +343,7 @@ class TripPlanMapService {
     final features = data['features'] as List;
     if (features.isEmpty) return null;
 
-    final feature = _pickBestFeature(features);
+    final feature = pickBestFeature(features);
     if (feature == null) return null;
 
     // name hiển thị: ưu tiên 'text', fallback 'place_name'
@@ -188,7 +388,7 @@ class TripPlanMapService {
     );
   }
 
-  Map<String, dynamic>? _pickBestFeature(List features) {
+  Map<String, dynamic>? pickBestFeature(List features) {
     const preferredTypes = ['poi', 'place', 'locality', 'neighborhood'];
 
     for (final type in preferredTypes) {
