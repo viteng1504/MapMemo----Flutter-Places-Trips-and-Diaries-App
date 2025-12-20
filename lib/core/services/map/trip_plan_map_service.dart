@@ -7,7 +7,9 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../../features/places/domain/entities/place_position.dart';
 import '../../../features/trips/domain/entities/planner/planner_place_entity.dart';
+import '../../../features/trips/domain/entities/planner/planner_stop_entity.dart';
 import '../../constants/app_api.dart';
+import '../../utils/utils.dart';
 
 class TripPlanMapService {
   TripPlanMapService();
@@ -19,10 +21,48 @@ class TripPlanMapService {
 
   bool get isSelectOnMap => _currentMarker != null;
 
+  final String _sourceId = "places-source";
+  final String _circleLayerId = "place-circle-layer";
+  final String _indexLayerId = "place-index-layer";
+  final String _nameLayerId = "place-name-layer";
+
+  List<Map<String, dynamic>> features = [
+    // {
+    //   "type": "Feature",
+    //   "properties": {"index": 1, "name": "Nana Pickleball"},
+    //   "geometry": {
+    //     "type": "Point",
+    //     "coordinates": [108.2068, 16.0471],
+    //   },
+    // },
+    // {
+    //   "type": "Feature",
+    //   "properties": {"index": 2, "name": "Dragon Bridge"},
+    //   "geometry": {
+    //     "type": "Point",
+    //     "coordinates": [108.2272, 16.0614],
+    //   },
+    // },
+    // {
+    //   "type": "Feature",
+    //   "properties": {"index": 3, "name": "My Khe Beach"},
+    //   "geometry": {
+    //     "type": "Point",
+    //     "coordinates": [108.2471, 16.0545],
+    //   },
+    // },
+  ];
+  Map<String, dynamic>? tempFeature;
+  bool _styleReady = false;
+
   void setMap(MapboxMap m) async {
     map = m;
     map!.gestures.updateSettings(
-      GesturesSettings(pitchEnabled: false, pinchToZoomEnabled: true),
+      GesturesSettings(
+        pitchEnabled: false,
+        pinchToZoomEnabled: true,
+        rotateEnabled: false,
+      ),
     );
     map!.scaleBar.updateSettings(
       ScaleBarSettings(
@@ -31,6 +71,9 @@ class TripPlanMapService {
     );
     // onmap
     _pointManager = await map!.annotations.createPointAnnotationManager();
+
+    //create map layers
+    ensurePlaceLayers();
   }
 
   Future<geo.Position> getUserPosition() async {
@@ -85,51 +128,39 @@ class TripPlanMapService {
     return PlacePosition(lat: pos.lat.toDouble(), lng: pos.lng.toDouble());
   }
 
+  // get feature collection========================================================================================
+  Future<void> buildStopsFeatureCollection(
+    List<PlannerStopEntity> stops,
+  ) async {
+    features = stops.map(Utils.convertStopToFeature).toList();
+  }
+
   // Select on map========================================================================================
-  final String _sourceId = "places-source";
-  final String _circleLayerId = "place-circle-layer";
-  final String _indexLayerId = "place-index-layer";
-  final String _nameLayerId = "place-name-layer";
 
-  final List<Map<String, dynamic>> features = [
-    {
-      "type": "Feature",
-      "properties": {"index": 1, "name": "Nana Pickleball"},
-      "geometry": {
-        "type": "Point",
-        "coordinates": [108.2068, 16.0471],
-      },
-    },
-    {
-      "type": "Feature",
-      "properties": {"index": 2, "name": "Dragon Bridge"},
-      "geometry": {
-        "type": "Point",
-        "coordinates": [108.2272, 16.0614],
-      },
-    },
-    {
-      "type": "Feature",
-      "properties": {"index": 3, "name": "My Khe Beach"},
-      "geometry": {
-        "type": "Point",
-        "coordinates": [108.2471, 16.0545],
-      },
-    },
-  ];
-  Map<String, dynamic>? _tempFeature;
-  int _counter = 0;
-  bool _styleReady = false;
+  void resetTempFeature() {
+    tempFeature = null;
+  }
 
-  Future<void> _updatePlacesSource() async {
+  Future<void> updatePlacesSource() async {
     if (map == null) return;
 
-    final newFeature = [...features, _tempFeature];
-    _tempFeature = null;
+    final List<Map<String, dynamic>> newFeatures = [
+      ...features,
+      if (tempFeature != null) tempFeature!,
+    ];
 
-    final fc = {"type": "FeatureCollection", "features": newFeature};
+    final fc = <String, dynamic>{
+      "type": "FeatureCollection",
+      "features": newFeatures,
+    };
 
-    await map!.style.setStyleSourceProperty(_sourceId, "data", fc);
+    try {
+      await map!.style.setStyleSourceProperty(_sourceId, "data", fc);
+    } catch (e) {
+      // debug nhanh
+      // ignore: avoid_print
+      print("updatePlacesSource error: $e");
+    } finally {}
   }
 
   Future<void> ensurePlaceLayers() async {
@@ -140,50 +171,44 @@ class TripPlanMapService {
     if (_styleReady) return;
 
     // Source
-    final hasSource = await style.styleSourceExists(_sourceId);
-    if (!hasSource) {
-      await style.addSource(
-        GeoJsonSource(
-          id: _sourceId,
-          data: jsonEncode({"type": "FeatureCollection", "features": []}),
-        ),
-      );
-    }
+    // final hasSource = await style.styleSourceExists(_sourceId);
+    await style.addSource(
+      GeoJsonSource(
+        id: _sourceId,
+        data: jsonEncode({"type": "FeatureCollection", "features": []}),
+      ),
+    );
 
     // Circle layer
-    if (!await style.styleLayerExists(_circleLayerId)) {
-      await style.addLayer(
-        CircleLayer(
-          id: _circleLayerId,
-          sourceId: _sourceId,
-          circleRadius: 12,
-          circleColor: Colors.blue.value,
-          circleStrokeColor: Colors.white.value,
-          circleStrokeWidth: 2,
-        ),
-      );
-    }
+    await style.addLayer(
+      CircleLayer(
+        id: _circleLayerId,
+        sourceId: _sourceId,
+        circleRadius: 9,
+        circleColor: Colors.blue.value,
+        circleStrokeColor: Colors.white.value,
+        circleStrokeWidth: 2,
+      ),
+    );
 
     // Index text (số)
-    if (!await style.styleLayerExists(_indexLayerId)) {
-      await style.addLayer(
-        SymbolLayer(
-          id: _indexLayerId,
-          sourceId: _sourceId,
-          // ✅ Khuyên dùng expression để chắc chắn là string
-          textFieldExpression: [
-            "to-string",
-            ["get", "index"],
-          ],
-          textSize: 14,
-          textColor: Colors.white.value,
-          textHaloColor: Colors.black.value,
-          textHaloWidth: 1.5,
-          textAnchor: TextAnchor.CENTER,
-          textAllowOverlap: true,
-        ),
-      );
-    }
+    await style.addLayer(
+      SymbolLayer(
+        id: _indexLayerId,
+        sourceId: _sourceId,
+        // ✅ Khuyên dùng expression để chắc chắn là string
+        textFieldExpression: [
+          "to-string",
+          ["get", "index"],
+        ],
+        minZoom: 6,
+        textSize: 14,
+        textColor: Colors.white.value,
+        textHaloColor: Colors.black.value,
+        textHaloWidth: 1.5,
+        textAnchor: TextAnchor.CENTER,
+      ),
+    );
 
     // Name text (tên dưới)
     // if (!await style.styleLayerExists(_nameLayerId)) {
@@ -208,6 +233,7 @@ class TripPlanMapService {
 
   Future<PlannerPlaceEntity?> onSelectPlaceOnMap(
     MapContentGestureContext ctx,
+    int nextStopIndex,
   ) async {
     if (map == null) return null;
 
@@ -225,11 +251,9 @@ class TripPlanMapService {
     final place = await reverseGeocode(lat: lat, lng: lng);
 
     print("place info============================================");
-    print(place.toString());
     final displayName = place?.name ?? "Unknown";
 
     // Tăng số thứ tự
-    _counter++;
 
     // Add feature mới
     // _features.add({
@@ -240,9 +264,9 @@ class TripPlanMapService {
     //     "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
     //   },
     // });
-    _tempFeature = {
+    tempFeature = {
       "type": "Feature",
-      "properties": {"index": _counter, "name": displayName},
+      "properties": {"index": nextStopIndex, "name": displayName},
       "geometry": {
         "type": "Point",
         "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
@@ -250,7 +274,7 @@ class TripPlanMapService {
     };
 
     // Update source để map render marker + text
-    await _updatePlacesSource();
+    await updatePlacesSource();
 
     final latLng = Point(coordinates: Position(lng, lat));
     map!.flyTo(
@@ -259,6 +283,13 @@ class TripPlanMapService {
     );
 
     return place;
+  }
+
+  Future<void> addStopToPlan() async {
+    if (tempFeature == null) return;
+
+    features.add(tempFeature!);
+    await updatePlacesSource();
   }
 
   Future<void> plannerShowPointOnMap({
@@ -275,7 +306,7 @@ class TripPlanMapService {
     //     "coordinates": [lng, lat], // ✅ GeoJSON: [lng, lat]
     //   },
     // });
-    _tempFeature = {
+    tempFeature = {
       "type": "Feature",
       "properties": {"index": index, "name": displayName},
       "geometry": {
@@ -285,7 +316,7 @@ class TripPlanMapService {
     };
 
     // Update source để map render marker + text
-    await _updatePlacesSource();
+    await updatePlacesSource();
 
     final latLng = Point(coordinates: Position(lng, lat));
     map!.flyTo(
@@ -324,13 +355,11 @@ class TripPlanMapService {
       {
         'access_token': mapboxToken,
         'limit': '1',
-        // 'language': 'vi', // nếu bạn muốn ưu tiên tiếng Việt
+        'types': 'poi,place,locality,district,region,country',
       },
     );
 
     final res = await http.get(url);
-
-    print(res.body);
 
     if (res.statusCode != 200) {
       // TODO: log(res.body);

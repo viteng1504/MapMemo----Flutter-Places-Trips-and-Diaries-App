@@ -60,13 +60,6 @@ class MyLocalStorage {
       print("Created: ${place.createdAt}");
 
       // In ảnh theo format Ảnh 1, Ảnh 2
-      if (place.images.isEmpty) {
-        print("Images: Không có ảnh");
-      } else {
-        for (int j = 0; j < place.images.length; j++) {
-          print("Image ${j + 1}: (Uint8List image)");
-        }
-      }
 
       print("===========================\n");
     }

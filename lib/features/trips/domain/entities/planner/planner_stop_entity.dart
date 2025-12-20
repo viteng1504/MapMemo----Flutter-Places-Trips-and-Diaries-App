@@ -1,6 +1,6 @@
 class PlannerStopEntity {
   final String id;
-  final int index;
+  final int stopIndex;
   final String name;
   final double lat;
   final double lng;
@@ -8,27 +8,42 @@ class PlannerStopEntity {
 
   const PlannerStopEntity({
     required this.id,
-    required this.index,
+    required this.stopIndex,
     required this.name,
     required this.lat,
     required this.lng,
     required this.nights,
   });
 
-  PlannerStopEntity copyWith({
-    String? id,
-    int? index,
-    String? name,
-    double? lat,
-    double? lng,
-    int? nights,
-  }) {
+  factory PlannerStopEntity.fromMap(Map<String, dynamic> map) {
     return PlannerStopEntity(
-      id: id ?? this.id,
-      index: index ?? this.index,
-      name: name ?? this.name,
-      lat: lat ?? this.lat,
-      lng: lng ?? this.lng,
+      id: map['id'] as String,
+      stopIndex: map['stop_index'] as int,
+      name: map['name'] as String,
+      lat: (map['lat'] as num).toDouble(),
+      lng: (map['lng'] as num).toDouble(),
+      nights: map['nights'] as int,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'stop_index': stopIndex,
+      'name': name,
+      'lat': lat,
+      'lng': lng,
+      'nights': nights,
+    };
+  }
+
+  PlannerStopEntity copyWith({int? nights}) {
+    return PlannerStopEntity(
+      id: id,
+      stopIndex: stopIndex,
+      name: name,
+      lat: lat,
+      lng: lng,
       nights: nights ?? this.nights,
     );
   }

@@ -13,7 +13,11 @@ class TripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(context, AppRoutes.tripPlanningAndTracking);
+        Navigator.pushNamed(
+          context,
+          AppRoutes.tripPlanningAndTracking,
+          arguments: trip,
+        );
       },
       child: Container(
         width: double.infinity,

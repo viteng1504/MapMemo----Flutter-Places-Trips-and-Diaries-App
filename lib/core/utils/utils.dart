@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../features/trips/domain/entities/planner/planner_stop_entity.dart';
+
 class Utils {
   static Future<bool> checkLocationPermission() async {
     final status = await Permission.location.request();
@@ -26,5 +28,17 @@ class Utils {
   static String fmt(DateTime? d) {
     if (d == null) return "Optional";
     return "${d.day} Th${d.month}, ${d.year}";
+  }
+
+  static Map<String, dynamic> convertStopToFeature(PlannerStopEntity stop) {
+    return {
+      "type": "Feature",
+      "id": stop.id,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [stop.lng, stop.lat],
+      },
+      "properties": {"name": stop.name, "index": stop.stopIndex},
+    };
   }
 }

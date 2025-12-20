@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/planner/planner_place_entity.dart';
+import '../../../../domain/entities/planner/planner_stop_entity.dart';
 
 class PlannerPlaceOverlayUi extends StatefulWidget {
   final VoidCallback onClose;
   final PlannerPlaceEntity place;
   final bool isLoading;
+  final Function(PlannerStopEntity) onAddToPlan;
+  final int nextStopIndex;
 
   const PlannerPlaceOverlayUi({
     super.key,
     required this.onClose,
     required this.place,
     required this.isLoading,
+    required this.onAddToPlan,
+    required this.nextStopIndex,
   });
 
   @override
@@ -95,7 +101,25 @@ class _PlannerPlaceOverlayUiState extends State<PlannerPlaceOverlayUi> {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    final id = const Uuid().v4();
+                    final name = widget.place.name;
+                    final lat = widget.place.lat;
+                    final lng = widget.place.lng;
+                    final stopIndex = widget.nextStopIndex;
+                    const nights = 0;
+
+                    final PlannerStopEntity plannerStopEntity =
+                        PlannerStopEntity(
+                          id: id,
+                          lat: lat,
+                          lng: lng,
+                          name: name,
+                          nights: nights,
+                          stopIndex: stopIndex,
+                        );
+                    widget.onAddToPlan(plannerStopEntity);
+                  },
                   icon: const Icon(Icons.add),
                   label: const Text(
                     'Add to plan',

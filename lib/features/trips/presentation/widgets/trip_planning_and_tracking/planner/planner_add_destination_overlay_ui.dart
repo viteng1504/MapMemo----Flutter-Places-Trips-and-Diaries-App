@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/app_colors.dart';
 
-class PlannerAddDestinationOverlayUi extends StatelessWidget {
-  const PlannerAddDestinationOverlayUi({
+class PlannerSearchDestinationOverlayUi extends StatelessWidget {
+  const PlannerSearchDestinationOverlayUi({
     super.key,
     this.onSearchTap,
     this.onGetSuggestions,
