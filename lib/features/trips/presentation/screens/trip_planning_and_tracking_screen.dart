@@ -62,6 +62,13 @@ class _TripPlanningAndTrackingScreenState
     super.initState();
   }
 
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _mapService.dispose();
+    super.dispose();
+  }
+
   void _showOverlay(OverlayType type) {
     setState(() => _overlayStack.add(type));
   }
@@ -167,8 +174,10 @@ class _TripPlanningAndTrackingScreenState
     _plannerService.addStop(tripId: tripId, stop: stopEntity);
 
     plannerStops!.add(stopEntity);
+    _mapService.addStopToPlan();
     setState(() {
       _overlayStack.clear();
+      _nextStopIndex = plannerStops!.length + 1;
     });
     print("===================================add to plan");
   }
@@ -206,12 +215,16 @@ class _TripPlanningAndTrackingScreenState
       );
       return;
     }
+    final int newNights = stops[index].nights + 1;
 
     setState(() {
-      plannerStops![index] = plannerStops![index].copyWith(
-        nights: stops[index].nights + 1,
-      );
+      plannerStops![index] = plannerStops![index].copyWith(nights: newNights);
     });
+
+    _plannerService.scheduleUpdateStopNights(
+      stopId: plannerStops![index].id,
+      nights: newNights,
+    );
   }
 
   void decreaseNights(int index) {
@@ -220,11 +233,25 @@ class _TripPlanningAndTrackingScreenState
     final currentNights = plannerStops![index].nights;
     if (currentNights <= 0) return;
 
+    final int newNights = currentNights - 1;
+
     setState(() {
-      plannerStops![index] = plannerStops![index].copyWith(
-        nights: currentNights - 1,
-      );
+      plannerStops![index] = plannerStops![index].copyWith(nights: newNights);
     });
+
+    _plannerService.scheduleUpdateStopNights(
+      stopId: plannerStops![index].id,
+      nights: newNights,
+    );
+  }
+
+  void _onMapReady() async {
+    await _mapService.onStyleReady();
+
+    if (plannerStops != null) {
+      await _mapService.buildStopsFeatureCollection(plannerStops!);
+      await _mapService.updatePlacesSource();
+    }
   }
 
   @override
@@ -283,6 +310,20 @@ class _TripPlanningAndTrackingScreenState
                 key: const ValueKey("map"),
                 onTapListener: (mapContext) {
                   _onSelectOnMap(mapContext);
+                },
+                onCameraChangeListener: (_) async {
+                  if (!_mapService.styleReady) {
+                    await _mapService.onStyleReady();
+
+                    // khi style + source đã sẵn → update map
+                    if (plannerStops != null) {
+                      await _mapService.buildStopsFeatureCollection(
+                        plannerStops!,
+                      );
+                      await _mapService.updatePlacesSource();
+                      await _mapService.updateRouteLineFromFeatures();
+                    }
+                  }
                 },
                 onMapCreated: (map) async {
                   setState(() {

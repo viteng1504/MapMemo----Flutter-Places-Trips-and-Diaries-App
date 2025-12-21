@@ -169,6 +169,8 @@ class _MapShellState extends State<MapShell> {
                         pulsingEnabled: true,
                         pulsingColor: Colors.blue.value,
                         showAccuracyRing: true,
+
+                        
                       ),
                     );
 

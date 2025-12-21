@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -79,5 +81,30 @@ class TripPlannerService {
         .update({'nights': newNights < 0 ? 0 : newNights})
         .eq('id', stopId)
         .eq('user_id', user.id);
+  }
+
+  Timer? _saveTimer;
+  final Map<String, int> _pendingNights = {}; // stopId -> nights
+
+  // avoid change nights too fast
+  void scheduleUpdateStopNights({required String stopId, required int nights}) {
+    _pendingNights[stopId] = nights;
+
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 400), () async {
+      final toSave = Map<String, int>.from(_pendingNights);
+      _pendingNights.clear();
+
+      try {
+        for (final e in toSave.entries) {
+          await updateStopNights(stopId: e.key, newNights: e.value);
+          print(
+            "update night success=======================================================",
+          );
+        }
+      } catch (e) {
+        debugPrint('Update nights failed: $e');
+      }
+    });
   }
 }

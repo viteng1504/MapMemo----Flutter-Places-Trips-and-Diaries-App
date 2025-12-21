@@ -25,6 +25,8 @@ class TripPlanMapService {
   final String _circleLayerId = "place-circle-layer";
   final String _indexLayerId = "place-index-layer";
   final String _nameLayerId = "place-name-layer";
+  final String _routeSourceId = "route-source";
+  final String _routeLayerId = "route-line-layer";
 
   List<Map<String, dynamic>> features = [
     // {
@@ -53,7 +55,41 @@ class TripPlanMapService {
     // },
   ];
   Map<String, dynamic>? tempFeature;
-  bool _styleReady = false;
+  bool styleReady = false;
+
+  Future<void> dispose() async {
+    if (map == null) return;
+
+    try {
+      final style = map!.style;
+
+      if (await style.styleLayerExists(_circleLayerId)) {
+        await style.removeStyleLayer(_circleLayerId);
+      }
+      if (await style.styleLayerExists(_indexLayerId)) {
+        await style.removeStyleLayer(_indexLayerId);
+      }
+      if (await style.styleSourceExists(_sourceId)) {
+        await style.removeStyleSource(_sourceId);
+      }
+    } catch (_) {}
+
+    map = null;
+    styleReady = false;
+  }
+
+  Future<void> onStyleReady() async {
+    if (map == null || styleReady) return;
+
+    // ⏳ đợi style thật sự sẵn
+    await _waitForStyleReady();
+
+    // 🔧 add source + layer
+    await ensurePlaceLayers();
+    await ensureRouteLayers();
+
+    styleReady = true;
+  }
 
   void setMap(MapboxMap m) async {
     map = m;
@@ -73,7 +109,6 @@ class TripPlanMapService {
     _pointManager = await map!.annotations.createPointAnnotationManager();
 
     //create map layers
-    ensurePlaceLayers();
   }
 
   Future<geo.Position> getUserPosition() async {
@@ -93,7 +128,7 @@ class TripPlanMapService {
     );
 
     map!.flyTo(
-      CameraOptions(center: userLatLng, zoom: 6),
+      CameraOptions(center: userLatLng, zoom: 8),
       MapAnimationOptions(duration: 1000),
     );
   }
@@ -167,68 +202,61 @@ class TripPlanMapService {
     if (map == null) return;
     final style = map!.style;
 
-    // Nếu đã tạo rồi thì thôi
-    if (_styleReady) return;
+    // ADD SOURCE (defensive)
+    try {
+      await style.addSource(
+        GeoJsonSource(
+          id: _sourceId,
+          data: jsonEncode({"type": "FeatureCollection", "features": []}),
+        ),
+      );
+    } catch (e) {
+      if (!e.toString().contains('already exists')) {
+        rethrow;
+      }
+    }
 
-    // Source
-    // final hasSource = await style.styleSourceExists(_sourceId);
-    await style.addSource(
-      GeoJsonSource(
-        id: _sourceId,
-        data: jsonEncode({"type": "FeatureCollection", "features": []}),
-      ),
-    );
+    // ADD CIRCLE LAYER
+    try {
+      await style.addLayer(
+        CircleLayer(
+          id: _circleLayerId,
+          sourceId: _sourceId,
+          circleRadius: 9,
+          circleColor: Colors.blue.value,
+          circleStrokeColor: Colors.white.value,
+          circleStrokeWidth: 2,
+        ),
+      );
+    } catch (e) {
+      if (!e.toString().contains('already exists')) {
+        rethrow;
+      }
+    }
 
-    // Circle layer
-    await style.addLayer(
-      CircleLayer(
-        id: _circleLayerId,
-        sourceId: _sourceId,
-        circleRadius: 9,
-        circleColor: Colors.blue.value,
-        circleStrokeColor: Colors.white.value,
-        circleStrokeWidth: 2,
-      ),
-    );
-
-    // Index text (số)
-    await style.addLayer(
-      SymbolLayer(
-        id: _indexLayerId,
-        sourceId: _sourceId,
-        // ✅ Khuyên dùng expression để chắc chắn là string
-        textFieldExpression: [
-          "to-string",
-          ["get", "index"],
-        ],
-        minZoom: 6,
-        textSize: 14,
-        textColor: Colors.white.value,
-        textHaloColor: Colors.black.value,
-        textHaloWidth: 1.5,
-        textAnchor: TextAnchor.CENTER,
-      ),
-    );
-
-    // Name text (tên dưới)
-    // if (!await style.styleLayerExists(_nameLayerId)) {
-    //   await style.addLayer(
-    //     SymbolLayer(
-    //       id: _nameLayerId,
-    //       sourceId: _sourceId,
-    //       textField: "{name}",
-    //       textSize: 12,
-    //       textColor: Colors.white.value,
-    //       textHaloColor: Colors.black.value,
-    //       textHaloWidth: 1.2,
-    //       textAnchor: TextAnchor.TOP,
-    //       textOffset: [0, 1.4],
-    //       textAllowOverlap: true,
-    //     ),
-    //   );
-    // }
-
-    _styleReady = true;
+    // ADD INDEX LAYER
+    try {
+      await style.addLayer(
+        SymbolLayer(
+          id: _indexLayerId,
+          sourceId: _sourceId,
+          textFieldExpression: [
+            "to-string",
+            ["get", "index"],
+          ],
+          minZoom: 6,
+          textSize: 14,
+          textColor: Colors.white.value,
+          textHaloColor: Colors.black.value,
+          textHaloWidth: 1.5,
+          textAnchor: TextAnchor.CENTER,
+        ),
+      );
+    } catch (e) {
+      if (!e.toString().contains('already exists')) {
+        rethrow;
+      }
+    }
   }
 
   Future<PlannerPlaceEntity?> onSelectPlaceOnMap(
@@ -285,6 +313,7 @@ class TripPlanMapService {
     return place;
   }
 
+  // uodate map when add stop to plan========================================================================================
   Future<void> addStopToPlan() async {
     if (tempFeature == null) return;
 
@@ -292,6 +321,7 @@ class TripPlanMapService {
     await updatePlacesSource();
   }
 
+  // show point on map========================================================================================
   Future<void> plannerShowPointOnMap({
     required int index,
     required String displayName,
@@ -325,26 +355,8 @@ class TripPlanMapService {
     );
   }
 
-  Future<void> setMarker({required num lat, required num lng}) async {
-    final pm = _pointManager;
-    if (pm == null) return;
-
-    // Nếu đã có marker thì xoá marker cũ
-    if (_currentMarker != null) {
-      await pm.delete(_currentMarker!);
-      _currentMarker = null;
-    }
-
-    _currentMarker = await pm.create(
-      PointAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        // nếu bạn có icon riêng thì set image ở đây
-      ),
-    );
-  }
-
+  //get place info on mapbox ========================================================================================
   final mapboxToken = AppApi.mapboxAccessToken;
-
   Future<PlannerPlaceEntity?> reverseGeocode({
     required double lng,
     required double lat,
@@ -436,5 +448,102 @@ class TripPlanMapService {
       (f) => f is Map<String, dynamic>,
       orElse: () => null,
     );
+  }
+
+  // show path========================================================================================
+  Future<void> _waitForStyleReady() async {
+    while (true) {
+      try {
+        // trick: gọi API nhẹ, nếu chưa ready sẽ throw
+        await map!.style.styleLayerExists('background');
+        return;
+      } catch (_) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+  }
+
+  Future<void> ensureRouteLayers() async {
+    if (map == null) return;
+    final style = map!.style;
+
+    // ADD SOURCE (defensive)
+    try {
+      await style.addSource(
+        GeoJsonSource(
+          id: _routeSourceId,
+          data: jsonEncode({
+            "type": "Feature",
+            "properties": {},
+            "geometry": {"type": "LineString", "coordinates": []},
+          }),
+        ),
+      );
+    } catch (e) {
+      if (!e.toString().contains('already exists')) {
+        rethrow;
+      }
+    }
+
+    // ADD LINE LAYER
+    try {
+      await style.addLayer(
+        LineLayer(
+          id: _routeLayerId,
+          sourceId: _routeSourceId,
+          lineJoin: LineJoin.ROUND,
+          lineCap: LineCap.ROUND,
+          lineWidth: 4.0,
+          lineColor: Colors.blue.value,
+          lineOpacity: 0.8,
+        ),
+      );
+    } catch (e) {
+      if (!e.toString().contains('already exists')) {
+        rethrow;
+      }
+    }
+  }
+
+  String _buildRouteFromFeatures(List<Map<String, dynamic>> features) {
+    if (features.length < 2) {
+      return jsonEncode({
+        "type": "Feature",
+        "properties": {},
+        "geometry": {"type": "LineString", "coordinates": []},
+      });
+    }
+
+    // sort theo properties.index
+    final sorted = [...features]
+      ..sort((a, b) {
+        final ai = (a['properties']?['index'] as num?)?.toInt() ?? 0;
+        final bi = (b['properties']?['index'] as num?)?.toInt() ?? 0;
+        return ai.compareTo(bi);
+      });
+
+    final coords = sorted
+        .map((f) => f['geometry']?['coordinates'])
+        .where((c) => c is List && c.length >= 2)
+        .map((c) => [(c[0] as num), (c[1] as num)])
+        .toList();
+
+    return jsonEncode({
+      "type": "Feature",
+      "properties": {},
+      "geometry": {"type": "LineString", "coordinates": coords},
+    });
+  }
+
+  Future<void> updateRouteLineFromFeatures() async {
+    if (map == null) return;
+    final style = map!.style;
+
+    final exists = await style.styleSourceExists(_routeSourceId);
+    if (!exists) return;
+
+    final geoJson = _buildRouteFromFeatures(features);
+
+    await style.setStyleSourceProperty(_routeSourceId, "data", geoJson);
   }
 }

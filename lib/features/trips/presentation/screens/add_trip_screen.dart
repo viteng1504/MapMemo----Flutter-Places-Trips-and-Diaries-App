@@ -86,7 +86,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
                   // SUMMARY
                   InputBox(
                     icon: Icons.menu,
-                    title: "Add a short summary",
+                    title: "Add a short description",
                     child: TextField(
                       controller: summaryController,
                       maxLines: 2,
