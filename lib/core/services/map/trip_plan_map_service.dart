@@ -191,6 +191,8 @@ class TripPlanMapService {
 
     try {
       await map!.style.setStyleSourceProperty(_sourceId, "data", fc);
+
+      await updateRouteLineFromFeatures(newFeatures: newFeatures);
     } catch (e) {
       // debug nhanh
       // ignore: avoid_print
@@ -493,7 +495,9 @@ class TripPlanMapService {
           sourceId: _routeSourceId,
           lineJoin: LineJoin.ROUND,
           lineCap: LineCap.ROUND,
-          lineWidth: 4.0,
+
+          lineWidth: 2.0, // 👈 nhỏ lại
+          lineDasharray: [2.0, 2.0], // 👈 DASH LINE
           lineColor: Colors.blue.value,
           lineOpacity: 0.8,
         ),
@@ -535,14 +539,21 @@ class TripPlanMapService {
     });
   }
 
-  Future<void> updateRouteLineFromFeatures() async {
+  Future<void> updateRouteLineFromFeatures({
+    List<Map<String, dynamic>>? newFeatures,
+  }) async {
     if (map == null) return;
     final style = map!.style;
 
     final exists = await style.styleSourceExists(_routeSourceId);
     if (!exists) return;
 
-    final geoJson = _buildRouteFromFeatures(features);
+    String geoJson = "";
+    if (newFeatures == null) {
+      geoJson = _buildRouteFromFeatures(features);
+    } else {
+      geoJson = _buildRouteFromFeatures(newFeatures);
+    }
 
     await style.setStyleSourceProperty(_routeSourceId, "data", geoJson);
   }
