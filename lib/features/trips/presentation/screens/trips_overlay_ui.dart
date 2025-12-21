@@ -26,6 +26,15 @@ class _TripsOverlayUiState extends State<TripsOverlayUi> {
   @override
   void initState() {
     super.initState();
+
+    // Giả sử MyLocalStorage.trips là List<TripModel>
+    if (MyLocalStorage.trips.isNotEmpty) {
+      sortTripsByStartDateDesc(MyLocalStorage.trips);
+    }
+  }
+
+  void sortTripsByStartDateDesc(List<TripModel> trips) {
+    trips.sort((a, b) => b.startDate.compareTo(a.startDate));
   }
 
   Future<void> showTripTypeBottomSheet(BuildContext context) async {
@@ -117,7 +126,6 @@ class _TripsOverlayUiState extends State<TripsOverlayUi> {
                         ),
 
                         const SizedBox(height: 80),
-
                       ],
                     ),
                   );

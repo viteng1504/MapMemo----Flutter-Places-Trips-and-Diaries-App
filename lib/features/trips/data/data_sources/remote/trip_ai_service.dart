@@ -9,44 +9,39 @@ import '../../../domain/entities/trip_ai_request.dart';
 class TripAiService {
   // Thay vì dùng AppApi.geminiApiKey làm URL
   static Future<List<AiPlace>> generateItinerary(TripAiRequest req) async {
-    print("Travel style ${req.travelStyle}");
-    // ĐÃ FIX: Dùng API version v1 + model mới
     const String baseUrl =
         "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
     final String apiKey = AppApi.geminiApiKey;
 
     final url = Uri.parse('$baseUrl?key=$apiKey');
 
-    final String travelStyle = req.travelStyle ?? "bất kỳ";
-
     final prompt =
         """
 Bạn là một travel planner chuyên nghiệp.
 
-Hãy tạo hành trình du lịch khoảng 2 đến 4 nơi từ "${req.startDestination}" đến "${req.endDestination}".
-Phong cách du lịch: $travelStyle.
+Nhiệm vụ:
+- Tạo hành trình từ "${req.startDestination}" đến "${req.endDestination}"
+- Chọn từ 2 đến 4 điểm dừng (stops) hợp lý trên đường hoặc gần đường đi.
+- Mỗi stop bắt buộc có: name, lat, lng.
 
- Chỉ trả về JSON đúng FORMAT dưới đây, không giải thích gì thêm, không thêm text ngoài JSON:
+Chỉ trả về JSON đúng FORMAT dưới đây, KHÔNG giải thích, KHÔNG markdown, KHÔNG code block, KHÔNG thêm text ngoài JSON:
 
 {
-  "places": [
+  "stops": [
     {
       "name": "Tên địa điểm",
-      "nights": 1,
-      "date": "yyyy-MM-dd",
-      "distance": "khoảng cách từ điểm trước (ví dụ: 35km hoặc null)",
-      "duration": "thời gian di chuyển (ví dụ: 45 phút hoặc null)"
+      "lat": 10.762622,
+      "lng": 106.660172
     }
   ]
 }
 
- QUY TẮC:
-- Tất cả các field phải có đúng kiểu.
-- "image" phải là URL (không được để trống).
-- "nights" luôn là số nguyên >= 0.
-- "date" phải đúng dạng yyyy-MM-dd.
-- "distance" và "duration" có thể null.
-- Không được thêm mô tả, markdown hoặc code block.
+QUY TẮC BẮT BUỘC:
+- "stops" phải là mảng có độ dài 2..4.
+- "name" là string, không rỗng.
+- "lat" và "lng" là number (không được để trong dấu nháy) và phần thập phân phải có 6 chữ số.
+- lat trong [-90, 90], lng trong [-180, 180].
+- Không được trả về null cho lat/lng.
 """;
 
     final body = jsonEncode({
@@ -58,12 +53,12 @@ Phong cách du lịch: $travelStyle.
           ],
         },
       ],
-      // "generationConfig": {
-      //   "temperature": 0.7,
-      //   "topP": 0.8,
-      //   "topK": 40,
-      //   "maxOutputTokens": 100,
-      // },
+      // Nếu bạn muốn output ổn định hơn thì bật:
+      "generationConfig": {
+        "temperature": 0.4,
+        "topP": 0.9,
+        "maxOutputTokens": 5000,
+      },
       "safetySettings": [
         {
           "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
@@ -78,30 +73,72 @@ Phong cách du lịch: $travelStyle.
       body: body,
     );
 
+    // debug
     print(response.body);
-
     print("====================================");
 
-    if (response.statusCode == 200) {
-      print("status 200");
-      final data = jsonDecode(response.body);
-      final text = data["candidates"][0]["content"]["parts"][0]["text"];
+    if (response.statusCode != 200) {
+      throw Exception("Gemini Error: ${response.statusCode}\n${response.body}");
+    }
 
-      // Xử lý code block
-      String jsonText = text.trim();
-      final regex = RegExp(r"```json\s*(.*?)\s*```", dotAll: true);
-      final match = regex.firstMatch(jsonText);
-      if (match != null) {
-        jsonText = match.group(1)!;
+    final data = jsonDecode(response.body);
+
+    // Lấy text output
+    final text = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
+    if (text == null || text is! String) {
+      throw Exception("AI response không hợp lệ: thiếu text");
+    }
+
+    // Làm sạch output (phòng khi AI vẫn bọc ```json ... ``` hoặc thêm text)
+    String cleaned = text.trim();
+
+    // Nếu có codeblock
+    final codeBlock = RegExp(
+      r"```(?:json)?\s*(.*?)\s*```",
+      dotAll: true,
+    ).firstMatch(cleaned);
+    if (codeBlock != null) {
+      cleaned = codeBlock.group(1)!.trim();
+    }
+
+    // Nếu AI lỡ thêm text ngoài JSON, cố gắng cắt từ { ... }
+    final firstBrace = cleaned.indexOf('{');
+    final lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace != -1 && lastBrace != -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1).trim();
+    }
+
+    final jsonMap = jsonDecode(cleaned);
+
+    final stopsJson = jsonMap["stops"];
+    if (stopsJson == null || stopsJson is! List) {
+      throw Exception("JSON thiếu field 'stops' hoặc 'stops' không phải List");
+    }
+
+    // Option: validate kiểu dữ liệu ngay tại đây (đỡ crash về sau)
+    final stops = stopsJson.map((e) {
+      final name = e["name"];
+      final lat = e["lat"];
+      final lng = e["lng"];
+
+      if (name is! String || name.trim().isEmpty) {
+        throw Exception("Stop.name không hợp lệ: $e");
+      }
+      if (lat is! num || lng is! num) {
+        throw Exception("Stop.lat/lng phải là number: $e");
+      }
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        throw Exception("Stop lat/lng out of range: $e");
       }
 
-      final jsonMap = jsonDecode(jsonText);
-      final List placesJson = jsonMap["places"];
+      // Nếu AiPlace.fromJson expect double, ép kiểu:
+      return AiPlace.fromJson({
+        "name": name,
+        "lat": (lat).toDouble(),
+        "lng": (lng).toDouble(),
+      });
+    }).toList();
 
-      return placesJson.map((e) => AiPlace.fromJson(e)).toList();
-    } else {
-      print("Gemini Error: ${response.statusCode} - ${response.body}");
-      throw Exception("AI lỗi: ${response.statusCode}\n${response.body}");
-    }
+    return stops;
   }
 }

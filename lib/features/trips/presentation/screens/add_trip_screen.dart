@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/widgets/my_primary_button.dart';
+import '../../../../my_local_storage.dart';
 import '../../data/data_sources/remote/trip_service.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../widgets/add_trip/cover_photo_section.dart';
@@ -190,7 +191,6 @@ class _AddTripScreenState extends State<AddTripScreen> {
     });
   }
 
-
   Future<void> validateBeforeCreate(BuildContext context) async {
     bool nameError = tripName.trim().isEmpty;
     bool dateError = false;
@@ -238,6 +238,8 @@ class _AddTripScreenState extends State<AddTripScreen> {
       setState(() {
         isLoading = false;
       });
+
+      MyLocalStorage.trips.add(tripModel);
 
       Navigator.pop(context, tripModel);
     }

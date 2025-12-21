@@ -45,7 +45,7 @@ class _TripPlanningAndTrackingScreenState
 
   // List<P
 
-  int _nextStopIndex = 0;
+  int _nextStopIndex = 1;
   bool plannerPlaceLoading = false;
   List<PlannerStopEntity>? plannerStops;
   bool get _isGettingPlannerStop => plannerStops == null;
@@ -168,13 +168,27 @@ class _TripPlanningAndTrackingScreenState
   }
 
   // add to plan============================================================
-  void _onAddToPlan(PlannerStopEntity stopEntity) {
+  Future<void> _onAddToPlan(PlannerStopEntity stopEntity) async {
     if (_tripModel == null) return;
     final tripId = _tripModel!.id;
-    _plannerService.addStop(tripId: tripId, stop: stopEntity);
+    await _plannerService.addStop(tripId: tripId, stop: stopEntity);
 
     plannerStops!.add(stopEntity);
-    _mapService.addStopToPlan();
+    await _mapService.addStopToPlan();
+    setState(() {
+      _overlayStack.clear();
+      _nextStopIndex = plannerStops!.length + 1;
+    });
+    print("===================================add to plan");
+  }
+
+  Future<void> _onAddAiStopToPlan(PlannerStopEntity stopEntity) async {
+    if (_tripModel == null) return;
+    final tripId = _tripModel!.id;
+    await _plannerService.addStop(tripId: tripId, stop: stopEntity);
+
+    plannerStops!.add(stopEntity);
+    await _mapService.addAiStopToPlan(stopEntity);
     setState(() {
       _overlayStack.clear();
       _nextStopIndex = plannerStops!.length + 1;
@@ -243,15 +257,6 @@ class _TripPlanningAndTrackingScreenState
       stopId: plannerStops![index].id,
       nights: newNights,
     );
-  }
-
-  void _onMapReady() async {
-    await _mapService.onStyleReady();
-
-    if (plannerStops != null) {
-      await _mapService.buildStopsFeatureCollection(plannerStops!);
-      await _mapService.updatePlacesSource();
-    }
   }
 
   @override
@@ -392,7 +397,7 @@ class _TripPlanningAndTrackingScreenState
       }
     }
     // title base tab
-    return _currentTab == BaseTab.planner ? "Planner" : "Track";
+    return _currentTab == BaseTab.planner ? "Planner" : "Journal";
   }
 
   //base tab
@@ -410,9 +415,11 @@ class _TripPlanningAndTrackingScreenState
           tripDays: _tripModel!.days,
           decreaseNights: decreaseNights,
           increaseNights: increaseNights,
+          tripModel: _tripModel,
+          onAddToPlan: _onAddAiStopToPlan,
         );
       case BaseTab.track:
-        return TripTrackingOverlayUi(
+        return TripJournalOverlayUi(
           key: const ValueKey("track"),
 
           onPlaceTap: () => _showOverlay(OverlayType.plannerPlace),
@@ -474,7 +481,7 @@ class _TripPlanningAndTrackingScreenState
           NavigationDestination(
             icon: Icon(Icons.my_location_outlined),
             selectedIcon: Icon(Icons.my_location_outlined),
-            label: "Track",
+            label: "Journal",
           ),
         ],
       ),

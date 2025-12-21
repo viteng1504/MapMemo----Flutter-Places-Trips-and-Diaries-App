@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class TripTrackingOverlayUi extends StatefulWidget {
+class TripJournalOverlayUi extends StatefulWidget {
   final VoidCallback onPlaceTap;
-  const TripTrackingOverlayUi({super.key, required this.onPlaceTap});
+  const TripJournalOverlayUi({super.key, required this.onPlaceTap});
 
   @override
-  _TripTrackingOverlayUiState createState() => _TripTrackingOverlayUiState();
+  _TripJournalOverlayUiState createState() => _TripJournalOverlayUiState();
 }
 
-class _TripTrackingOverlayUiState extends State<TripTrackingOverlayUi> {
+class _TripJournalOverlayUiState extends State<TripJournalOverlayUi> {
   @override
   Widget build(BuildContext context) {
     return const SizedBox(width: 100, height: 100);

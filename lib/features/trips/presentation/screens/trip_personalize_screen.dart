@@ -33,6 +33,8 @@ class _TripPersonalizeScreenState extends State<TripPersonalizeScreen> {
     {"icon": Icons.directions_bus, "label": "Public Transport Trip"},
   ];
 
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -186,34 +188,62 @@ class _TripPersonalizeScreenState extends State<TripPersonalizeScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              onPressed: () async {
-                final req = aiRequest.copyWith(
-                  startDestination: start,
-                  endDestination: end,
-                  travelStyle: travelStyles[selectedStyle]["label"],
-                );
 
-                // call AI
-                final aiPlaces = await TripAiService.generateItinerary(req);
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final nav = Navigator.of(context);
 
-                print("=================================================");
-                print(aiPlaces.toString());
+                      final req = aiRequest.copyWith(
+                        startDestination: start,
+                        endDestination: end,
+                      );
 
-                // push itinerary + truyền dữ liệu
-                // Navigator.pushNamed(
-                //   context,
-                //   AppRoutes.tripItinerary,
-                //   arguments: {"request": req, "places": aiPlaces},
-                // );
-              },
-              child: const Text(
-                "Generate itinerary",
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  fontSize: 18,
-                ),
-              ),
+                      setState(() => isLoading = true);
+
+                      try {
+                        final aiPlaces = await TripAiService.generateItinerary(
+                          req,
+                        );
+
+                        if (!mounted) return;
+
+                        nav.pop(aiPlaces);
+
+                        return;
+                      } catch (e) {
+                        if (!mounted) return;
+                        // show lỗi nếu muốn
+                      } finally {
+                        if (!mounted) return;
+                        setState(() => isLoading = false);
+                      }
+                    },
+
+              child: isLoading == true
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          "Generate itinerary",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),

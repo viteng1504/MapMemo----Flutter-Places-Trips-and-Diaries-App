@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../../../../core/constants/app_routes.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/utils/utils.dart';
+import '../../../../data/models/trip_model.dart';
+import '../../../../domain/entities/ai_place.dart';
 import '../../../../domain/entities/planner/planner_stop_entity.dart';
+import '../../../../domain/entities/trip_ai_request.dart';
 import 'start_plan_trip.dart';
 
 class TripPlannerOverlayUi extends StatefulWidget {
@@ -16,6 +21,8 @@ class TripPlannerOverlayUi extends StatefulWidget {
   final int tripDays;
   final Function(int) increaseNights;
   final Function(int) decreaseNights;
+  final TripModel? tripModel;
+  final Function(PlannerStopEntity) onAddToPlan;
 
   const TripPlannerOverlayUi({
     super.key,
@@ -28,6 +35,8 @@ class TripPlannerOverlayUi extends StatefulWidget {
     required this.tripDays,
     required this.increaseNights,
     required this.decreaseNights,
+    this.tripModel,
+    required this.onAddToPlan,
   });
 
   @override
@@ -76,7 +85,48 @@ class _TripPlannerOverlayUiState extends State<TripPlannerOverlayUi> {
 
   //No places in list fuction
   Future<void> _onGetPersonalize() async {
-    return;
+    if (widget.tripModel == null) return;
+
+    final tripModel = widget.tripModel!;
+    final aiRequest = TripAiRequest(
+      tripName: tripModel.name,
+      tripSummary: tripModel.summary,
+      startDate: Utils.fmt(tripModel.startDate),
+      days: tripModel.days,
+      startDestination: "",
+      endDestination: "",
+    );
+
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.tripPersonalize,
+      arguments: aiRequest,
+    );
+
+    if (!mounted) return;
+    if (result == null) return;
+
+    final List<AiPlace> aiPlacesList = List<AiPlace>.from(result as List);
+
+    // 🔥 Lấy index bắt đầu từ plannerStops hiện tại
+    final int startIndex = widget.plannerStops.isNotEmpty
+        ? widget.plannerStops.last.stopIndex
+        : 0;
+
+    for (int i = 0; i < aiPlacesList.length; i++) {
+      final place = aiPlacesList[i];
+
+      final stop = PlannerStopEntity(
+        id: const Uuid().v4(),
+        stopIndex: startIndex + i + 1,
+        name: place.name,
+        lat: place.lat,
+        lng: place.lng,
+        nights: 0,
+      );
+
+      await widget.onAddToPlan(stop);
+    }
   }
 
   Future<void> _onManualBuildItinery() async {
@@ -215,6 +265,35 @@ class _TripPlannerOverlayUiState extends State<TripPlannerOverlayUi> {
                                   ),
 
                                   const SizedBox(height: 20),
+
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        _onGetPersonalize();
+                                      },
+                                      icon: const Icon(Icons.auto_awesome),
+                                      label: const Text(
+                                        'Get a personalize itinery',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.onPrimary,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            AppColors.primary, // đỏ như hình
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        elevation: 2,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                     ],
@@ -253,6 +332,7 @@ class _TripPlannerOverlayUiState extends State<TripPlannerOverlayUi> {
           Icon(icon, size: 18, color: AppColors.onSurface),
 
           Column(
+            crossAxisAlignment: .start,
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,

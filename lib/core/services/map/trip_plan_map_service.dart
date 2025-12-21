@@ -323,6 +323,22 @@ class TripPlanMapService {
     await updatePlacesSource();
   }
 
+  Future<void> addAiStopToPlan(PlannerStopEntity stop) async {
+    tempFeature = {
+      "type": "Feature",
+      "properties": {"index": stop.stopIndex, "name": stop.name},
+      "geometry": {
+        "type": "Point",
+        "coordinates": [stop.lng, stop.lat], // ✅ GeoJSON: [lng, lat]
+      },
+    };
+
+    features.add(tempFeature!);
+
+    tempFeature = null;
+    await updatePlacesSource();
+  }
+
   // show point on map========================================================================================
   Future<void> plannerShowPointOnMap({
     required int index,
