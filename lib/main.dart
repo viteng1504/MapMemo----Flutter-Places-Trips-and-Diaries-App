@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'MapMemo',
       theme: AppTheme.mainTheme,
-      home: const LoginScreen(),
+      home: const MapShell(),
 
       routes: {
         AppRoutes.login: (context) => const LoginScreen(),

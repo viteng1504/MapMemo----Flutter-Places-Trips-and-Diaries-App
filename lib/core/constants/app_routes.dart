@@ -9,4 +9,5 @@ class AppRoutes {
   static const String tripItinerary = '/trip_itinerary';
   static const String tripDestinationSearch = '/trip_destination_search';
   static const String tripPlanningAndTracking = '/trip_planning_and_tracking';
+  static const String socialMedia = '/social_media';
 }

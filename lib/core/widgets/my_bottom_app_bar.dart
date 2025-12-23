@@ -42,11 +42,11 @@ class _MyBottomAppBarState extends State<MyBottomAppBar> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navIcon(Icons.trip_origin_outlined, 1, "Trips"),
-              _navIcon(Icons.book, 2, "Diaries"),
+              _navIcon(Icons.place, 1, "Places"),
+              _navIcon(Icons.trip_origin_outlined, 2, "Trips"),
               const SizedBox(width: 50),
               _navIcon(Icons.notifications, 3, "Notifications"),
-              _navIcon(Icons.account_box, 4, "Profile"),
+              _navIcon(Icons.explore, 4, "Explore"),
             ],
           ),
         ),

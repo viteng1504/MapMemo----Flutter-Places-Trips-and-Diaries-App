@@ -12,7 +12,7 @@ import '../../domain/entities/planner/planner_stop_entity.dart';
 import '../widgets/trip_planning_and_tracking/planner/planner_add_destination_overlay_ui.dart';
 import '../widgets/trip_planning_and_tracking/planner/planner_place_overlay_ui.dart';
 import '../widgets/trip_planning_and_tracking/planner/trip_planner_overlay_ui.dart';
-import '../widgets/trip_planning_and_tracking/trip_tracking_overlay_ui.dart';
+import '../widgets/trip_planning_and_tracking/trip_journal_overlay_ui.dart';
 
 class TripPlanningAndTrackingScreen extends StatefulWidget {
   const TripPlanningAndTrackingScreen({super.key});
@@ -22,7 +22,7 @@ class TripPlanningAndTrackingScreen extends StatefulWidget {
       _TripPlanningAndTrackingScreenState();
 }
 
-enum BaseTab { planner, track }
+enum BaseTab { planner, journal }
 
 enum OverlayType { plannerAddDestination, plannerPlace }
 
@@ -418,11 +418,12 @@ class _TripPlanningAndTrackingScreenState
           tripModel: _tripModel,
           onAddToPlan: _onAddAiStopToPlan,
         );
-      case BaseTab.track:
+      case BaseTab.journal:
         return TripJournalOverlayUi(
-          key: const ValueKey("track"),
-
-          onPlaceTap: () => _showOverlay(OverlayType.plannerPlace),
+          key: const ValueKey("journal"),
+          plannerStops: plannerStops ?? [],
+          tripModel: _tripModel,
+          // onPlaceTap: () => _showOverlay(OverlayType.plannerPlace),
         );
     }
   }
@@ -465,7 +466,7 @@ class _TripPlanningAndTrackingScreenState
         selectedIndex: _currentTab == BaseTab.planner ? 0 : 1,
         onDestinationSelected: (index) {
           setState(() {
-            _currentTab = index == 0 ? BaseTab.planner : BaseTab.track;
+            _currentTab = index == 0 ? BaseTab.planner : BaseTab.journal;
           });
         },
         backgroundColor: AppColors.onPrimary.withOpacity(.85),
@@ -479,8 +480,8 @@ class _TripPlanningAndTrackingScreenState
             label: "Planner",
           ),
           NavigationDestination(
-            icon: Icon(Icons.my_location_outlined),
-            selectedIcon: Icon(Icons.my_location_outlined),
+            icon: Icon(Icons.collections_bookmark),
+            selectedIcon: Icon(Icons.collections_bookmark),
             label: "Journal",
           ),
         ],

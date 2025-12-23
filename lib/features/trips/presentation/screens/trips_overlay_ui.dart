@@ -47,11 +47,17 @@ class _TripsOverlayUiState extends State<TripsOverlayUi> {
 
     if (!context.mounted || tripModel == null) return;
 
-    Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       AppRoutes.tripPlanningAndTracking,
       arguments: tripModel,
     );
+
+    setState(() {
+      if (MyLocalStorage.trips.isNotEmpty) {
+        sortTripsByStartDateDesc(MyLocalStorage.trips);
+      }
+    });
   }
 
   @override

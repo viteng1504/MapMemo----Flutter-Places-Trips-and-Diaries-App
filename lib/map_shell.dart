@@ -15,6 +15,7 @@ import 'core/widgets/my_bottom_app_bar.dart';
 import 'features/auth/data/data_sources/remote/auth_api.dart';
 import 'features/places/presentation/cubits/home_overlay_cubit.dart';
 import 'features/places/presentation/screens/home_overlay_ui.dart';
+import 'features/social_media/presentation/screens/social_media_sheet.dart';
 import 'features/trips/data/data_sources/remote/trip_service.dart';
 import 'features/trips/data/models/trip_model.dart';
 import 'features/trips/presentation/screens/trips_overlay_ui.dart';
@@ -33,8 +34,13 @@ class _MapShellState extends State<MapShell> {
   final client = Supabase.instance.client;
   late TripService tripService;
   // MapboxMap? mapbox;
-  Map<dynamic, String> tabsName = {0: "Home", 1: "Trips"};
-  int currentTab = 0;
+  Map<dynamic, String> tabsName = {
+    1: "Home",
+    2: "Trips",
+    3: "Notification",
+    4: "Explore",
+  };
+  int currentTab = 1;
 
   @override
   void initState() {
@@ -67,7 +73,7 @@ class _MapShellState extends State<MapShell> {
     print('===========================');
   }
 
-  void onNavIconPressed(int index) {
+  void onNavIconPressed(int index) async {
     setState(() => currentTab = index);
   }
 
@@ -126,8 +132,8 @@ class _MapShellState extends State<MapShell> {
               return FloatingActionButton(
                 shape: const CircleBorder(),
                 onPressed: () async {
-                  if (currentTab != 0) {
-                    setState(() => currentTab = 0);
+                  if (currentTab != 1) {
+                    setState(() => currentTab = 1);
                     final ok = await Utils.checkLocationPermission();
                     if (!ok) return;
 
@@ -144,7 +150,7 @@ class _MapShellState extends State<MapShell> {
                 },
 
                 child: Icon(
-                  currentTab == 0 ? Icons.add : Icons.circle,
+                  currentTab == 1 ? Icons.add : Icons.circle,
                   color: AppColors.onPrimary,
                 ),
               );
@@ -156,7 +162,7 @@ class _MapShellState extends State<MapShell> {
               Positioned.fill(
                 child: MapWidget(
                   key: const ValueKey("map"),
-
+                  textureView: true,
                   onMapCreated: (map) async {
                     setState(() {
                       MapService.instance.setMap(map);
@@ -169,8 +175,6 @@ class _MapShellState extends State<MapShell> {
                         pulsingEnabled: true,
                         pulsingColor: Colors.blue.value,
                         showAccuracyRing: true,
-
-                        
                       ),
                     );
 
@@ -241,12 +245,14 @@ class _MapShellState extends State<MapShell> {
   // UI Overlays
   Widget _buildTabUI(int index) {
     switch (index) {
-      case 0:
-        return const HomeOverlayUI(key: ValueKey("home"));
       case 1:
-        return const TripsOverlayUi(key: ValueKey("explore"));
+        return const HomeOverlayUI(key: ValueKey("home"));
       case 2:
-        return const TripsOverlayUi(key: ValueKey("profile"));
+        return const TripsOverlayUi(key: ValueKey("trips"));
+      case 3:
+        return Container();
+      case 4:
+        return const SocialMediaSheet();
       default:
         return const SizedBox.shrink();
     }
