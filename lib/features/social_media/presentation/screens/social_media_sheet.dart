@@ -1,547 +1,326 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_images.dart';
-import '../../../../core/theme/app_colors.dart'; // Giữ lại import của bạn
+// Model dữ liệu giả lập
+class PostModel {
+  final String userName;
+  final String userAvatar;
+  final String timeAgo;
+  final String caption;
+  final String tripImage;
+  final String tripTitle;
+  final String tripLocation;
+  final int likeCount;
+  final int addCount;
 
-// --- WIDGET CHÍNH: SOCIAL MEDIA SHEET ---
-// Đặt widget này vào trong Stack của màn hình Map (đè lên Map)
-class SocialMediaSheet extends StatelessWidget {
+  PostModel({
+    required this.userName,
+    required this.userAvatar,
+    required this.timeAgo,
+    required this.caption,
+    required this.tripImage,
+    required this.tripTitle,
+    required this.tripLocation,
+    required this.likeCount,
+    required this.addCount,
+  });
+}
+
+class SocialMediaSheet extends StatefulWidget {
   const SocialMediaSheet({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5, // Mở lên 50% màn hình ban đầu
-      minChildSize: 0.25, // Thu nhỏ tối đa còn 15% (như cái tab nhỏ)
-      maxChildSize: 1, // Kéo lên gần full màn hình
-      builder: (context, scrollController) {
-        // scrollController này RẤT QUAN TRỌNG, phải truyền xuống dưới
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFF5F5F5), // Màu nền xám nhẹ
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2),
-            ],
-          ),
-          child: Column(
-            children: [
-              // 1. Thanh nắm (Handle bar) để người dùng biết có thể kéo
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[400],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // 2. Nội dung chính (Chứa các Tab)
-              Expanded(child: MainContent(scrollController: scrollController)),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  State<SocialMediaSheet> createState() => _SocialMediaSheetState();
 }
 
-// --- 2. MAIN CONTENT (Chứa Bottom Navigation & Logic chuyển Tab) ---
-class MainContent extends StatefulWidget {
-  final ScrollController scrollController; // Nhận controller từ Sheet
-
-  const MainContent({super.key, required this.scrollController});
-
-  @override
-  State<MainContent> createState() => _MainContentState();
-}
-
-class _MainContentState extends State<MainContent> {
-  int _currentIndex = 0;
+class _SocialMediaSheetState extends State<SocialMediaSheet> {
+  // Dữ liệu mẫu
+  final List<PostModel> posts = [
+    PostModel(
+      userName: "Minh Tuấn",
+      userAvatar: "https://i.pravatar.cc/150?img=11",
+      timeAgo: "2 giờ trước",
+      caption:
+          "Chuyến đi Đà Lạt chữa lành tâm hồn. Không khí thật tuyệt vời! 🌲☕️",
+      tripImage: "https://picsum.photos/id/10/600/300",
+      tripTitle: "Đà Lạt - Thành phố ngàn hoa",
+      tripLocation: "Lâm Đồng, Việt Nam",
+      likeCount: 1240,
+      addCount: 350,
+    ),
+    PostModel(
+      userName: "Lan Chi",
+      userAvatar: "https://i.pravatar.cc/150?img=5",
+      timeAgo: "5 giờ trước",
+      caption:
+          "Mọi người nhất định phải thử cung đường này nhé, biển xanh cát trắng nắng vàng. 🌊☀️",
+      tripImage: "https://picsum.photos/id/15/600/300",
+      tripTitle: "Khám phá Kỳ Co - Eo Gió",
+      tripLocation: "Quy Nhơn, Bình Định",
+      likeCount: 856,
+      addCount: 120,
+    ),
+    PostModel(
+      userName: "Phượt Bụi",
+      userAvatar: "https://i.pravatar.cc/150?img=3",
+      timeAgo: "1 ngày trước",
+      caption:
+          "Săn mây Tà Xùa thành công mỹ mãn. Trip này mình đi 2N1Đ chi phí cực rẻ.",
+      tripImage: "https://picsum.photos/id/29/600/300",
+      tripTitle: "Săn mây Tà Xùa",
+      tripLocation: "Sơn La, Việt Nam",
+      likeCount: 2300,
+      addCount: 890,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    // Danh sách các tab, truyền controller vào từng tab
-    final List<Widget> tabs = [
-      ExploreTab(controller: widget.scrollController),
-      MyPostTab(controller: widget.scrollController),
-      FollowerTab(controller: widget.scrollController),
-    ];
-
-    return Scaffold(
-      backgroundColor: Colors.transparent, // Để lộ bo góc của Container cha
-      // Dùng IndexedStack để giữ trạng thái các tab khi chuyển đổi
-      body: IndexedStack(index: _currentIndex, children: tabs),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        elevation: 10, // Tạo bóng đổ cho đẹp tách biệt với map
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: 'Explore',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            activeIcon: Icon(Icons.add_circle),
-            label: 'My Post',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: 'Follower',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// --- 3. EXPLORE TAB ---
-class ExploreTab extends StatelessWidget {
-  final ScrollController controller; // Bắt buộc phải có
-
-  const ExploreTab({super.key, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        // Header giả lập AppBar (Vì nằm trong Sheet nên không dùng AppBar của Scaffold)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Colors.white,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Explore Trips',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-
-        // List bài viết
-        Expanded(
-          child: ListView.separated(
-            controller: controller, // <--- Gắn Controller vào đây
-            padding: EdgeInsets.zero, // Bỏ padding thừa
-            itemCount: postsData.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final post = postsData[index];
-              return PostItem(data: post);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// --- 4. MY POST TAB ---
-class MyPostTab extends StatelessWidget {
-  final ScrollController controller;
-
-  const MyPostTab({super.key, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF5F5F5),
-      child: ListView(
-        controller: controller, // <--- Gắn Controller vào đây
-        padding: EdgeInsets.zero,
-        children: [
-          // Header Profile
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundImage: NetworkImage(
-                        currentUser['avatar'] as String,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatItem(
-                            '${(currentUser['stats'] as Map)['posts']}',
-                            'Posts',
-                          ),
-                          _buildStatItem(
-                            '${(currentUser['stats'] as Map)['followers']}',
-                            'Followers',
-                          ),
-                          _buildStatItem(
-                            '${(currentUser['stats'] as Map)['following']}',
-                            'Following',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+        // --- PHẦN CHÍNH: DraggableScrollableSheet ---
+        DraggableScrollableSheet(
+          initialChildSize: 0.6, // Chiều cao ban đầu (60% màn hình)
+          minChildSize: 0.3, // Chiều cao thấp nhất khi kéo xuống
+          maxChildSize: 0.95, // Chiều cao tối đa khi kéo lên
+          builder: (BuildContext context, ScrollController scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5F5F5), // Màu nền xám nhẹ
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  currentUser['name'] as String,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  currentUser['bio'] as String,
-                  style: const TextStyle(fontSize: 14, color: Colors.black87),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Edit Profile',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'My Trips',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          // List My Posts
-          ListView.separated(
-            physics: const NeverScrollableScrollPhysics(), // Scroll theo cha
-            shrinkWrap: true,
-            itemCount: myPostsData.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
-            itemBuilder: (context, index) => PostItem(data: myPostsData[index]),
-          ),
-          const SizedBox(
-            height: 80,
-          ), // Padding dưới cùng để không bị che bởi bottom nav
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-      ],
-    );
-  }
-}
-
-// --- 5. FOLLOWER TAB ---
-class FollowerTab extends StatelessWidget {
-  final ScrollController controller;
-
-  const FollowerTab({super.key, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.white,
-          width: double.infinity,
-          child: const Text(
-            'Followers',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: ListView.builder(
-            controller: controller, // <--- Gắn Controller vào đây
-            padding: EdgeInsets.zero,
-            itemCount: followersData.length,
-            itemBuilder: (context, index) {
-              final user = followersData[index];
-              return Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                margin: const EdgeInsets.only(bottom: 1),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundImage: AssetImage(AppImages.danang),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user['name'] as String,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const Text(
-                            'Started following you',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: user['isFollowing'] as bool
-                            ? Colors.grey[200]
-                            : AppColors.primary,
-                        foregroundColor: user['isFollowing'] as bool
-                            ? Colors.black
-                            : Colors.white,
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        user['isFollowing'] as bool ? 'Following' : 'Follow',
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// --- 6. POST ITEM (Giữ nguyên logic cũ, chỉ cập nhật xử lý ảnh) ---
-class PostItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const PostItem({super.key, required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundImage: NetworkImage(data['user']['avatar']),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      data['user']['name'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      data['user']['time'],
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                const Icon(Icons.more_horiz, color: Colors.grey),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Caption
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(data['caption'], style: const TextStyle(fontSize: 15)),
-          ),
-          const SizedBox(height: 12),
-          // Trip Card
-          _buildTripCard(data['trip']),
-          const SizedBox(height: 12),
-          // Actions
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.favorite_border,
-                  size: 26,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 6),
-                Text('${data['likes']}'),
-                const SizedBox(width: 24),
-                const Icon(
-                  Icons.bookmark_add_outlined,
-                  size: 26,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 6),
-                Text('${data['adds']} Add Trip'),
-                const Spacer(),
-                const Icon(Icons.share_outlined, color: AppColors.primary),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTripCard(Map<String, dynamic> trip) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      height: 200,
-      width: double.infinity,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              trip['image'],
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: Colors.grey[300],
-                child: const Icon(Icons.image_not_supported),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'TRIP',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    trip['title'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    trip['date'],
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    spreadRadius: 2,
                   ),
                 ],
               ),
-            ),
-          ],
+              child: Column(
+                children: [
+                  // Thanh Handle (Thanh nắm)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  // Danh sách bài đăng
+                  Expanded(
+                    child: ListView.builder(
+                      controller:
+                          scrollController, // QUAN TRỌNG: Phải gắn controller này
+                      itemCount: posts.length,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      itemBuilder: (context, index) {
+                        return _buildPostItem(posts[index]);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 50),
+                ],
+              ),
+            );
+          },
         ),
+      ],
+    );
+  }
+
+  // Widget hiển thị từng bài đăng
+  Widget _buildPostItem(PostModel post) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Header: Avatar + Tên + Thời gian
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundImage: NetworkImage(post.userAvatar),
+                radius: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.userName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      post.timeAgo,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.more_horiz, color: Colors.grey),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // 2. Caption
+          Text(post.caption, style: const TextStyle(fontSize: 14, height: 1.4)),
+
+          const SizedBox(height: 12),
+
+          // 3. Trip Embed (Bài trip đính kèm)
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            clipBehavior: Clip.antiAlias, // Cắt ảnh bo góc
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ảnh Cover của Trip
+                Image.network(
+                  post.tripImage,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(height: 150, color: Colors.grey[300]),
+                ),
+                // Thông tin Trip
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              post.tripTitle,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  size: 14,
+                                  color: Colors.blue,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    post.tripLocation,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+
+          // 4. Stats: Tim và Add Trip
+          Row(
+            children: [
+              _buildStatItem(
+                icon: Icons.favorite_border,
+                activeIcon: Icons.favorite,
+                color: Colors.red,
+                count: post.likeCount,
+                label: "thích",
+              ),
+              const SizedBox(width: 24),
+              _buildStatItem(
+                icon: Icons.bookmark_add_outlined,
+                activeIcon: Icons.bookmark_added,
+                color: Colors.blue,
+                count: post.addCount,
+                label: "đã thêm",
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget con hiển thị icon và số lượng
+  Widget _buildStatItem({
+    required IconData icon,
+    required IconData activeIcon,
+    required Color color,
+    required int count,
+    required String label,
+  }) {
+    return InkWell(
+      onTap: () {
+        // Xử lý logic like/add tại đây
+      },
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: Colors.grey[700]),
+          const SizedBox(width: 6),
+          Text(
+            "$count",
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+        ],
       ),
     );
   }
 }
-
-// --- DỮ LIỆU GIẢ LẬP (MOCK DATA) ---
-// (Giữ nguyên phần data của bạn ở file cũ, chỉ cần paste lại vào cuối file này hoặc import)
-final List<Map<String, dynamic>> postsData = [
-  // ... Paste data postsData của bạn
-  {
-    'user': {
-      'name': 'Hoàng Nam',
-      'avatar': 'https://i.pravatar.cc/150?img=33',
-      'time': '30 phút trước',
-    },
-    'caption': 'Hà Giang mùa này đẹp quá!',
-    'trip': {
-      'title': 'Hà Giang Loop',
-      'date': '10/11/2023',
-      'image':
-          'https://images.unsplash.com/photo-1598135753163-6167c1a1ad65?auto=format&fit=crop&w=800',
-    },
-    'likes': 1540,
-    'adds': 420,
-  },
-  // Thêm dữ liệu khác nếu cần...
-];
-final currentUser = {
-  'name': 'Tuấn Anh',
-  'avatar': 'https://i.pravatar.cc/150?img=11',
-  'bio': 'Travel Blogger',
-  'stats': {'posts': 12, 'followers': '5.4k', 'following': 120},
-};
-final myPostsData = postsData; // Giả lập lấy lại postsData
-final followersData = [
-  {
-    'name': 'Nguyễn Thu Hà',
-    'avatar': 'https://i.pravatar.cc/150?img=5',
-    'isFollowing': true,
-  },
-  {
-    'name': 'Trần Minh Đức',
-    'avatar': 'https://i.pravatar.cc/150?img=3',
-    'isFollowing': false,
-  },
-];

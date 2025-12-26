@@ -411,31 +411,20 @@ class _TripPlannerOverlayUiState extends State<TripPlannerOverlayUi> {
                 Stack(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 50,
+                      height: 50,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(14),
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
-                    ),
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.black87,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: Text(
-                          "$index",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                          ),
+                      child: Text(
+                        "$index",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

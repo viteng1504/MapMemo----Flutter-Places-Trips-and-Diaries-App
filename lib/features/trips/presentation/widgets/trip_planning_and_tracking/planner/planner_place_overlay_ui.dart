@@ -26,6 +26,8 @@ class PlannerPlaceOverlayUi extends StatefulWidget {
 }
 
 class _PlannerPlaceOverlayUiState extends State<PlannerPlaceOverlayUi> {
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
@@ -102,6 +104,10 @@ class _PlannerPlaceOverlayUiState extends State<PlannerPlaceOverlayUi> {
                 height: 54,
                 child: ElevatedButton.icon(
                   onPressed: () {
+                    setState(() {
+                      isLoading = true;
+                    });
+
                     final id = const Uuid().v4();
                     final name = widget.place.name;
                     final lat = widget.place.lat;
@@ -120,11 +126,23 @@ class _PlannerPlaceOverlayUiState extends State<PlannerPlaceOverlayUi> {
                         );
                     widget.onAddToPlan(plannerStopEntity);
                   },
-                  icon: const Icon(Icons.add),
-                  label: const Text(
-                    'Add to plan',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  icon: Icon(
+                    Icons.add,
+                    color: isLoading == true
+                        ? AppColors.primary
+                        : AppColors.background2,
                   ),
+                  label: isLoading == true
+                      ? const CircularProgressIndicator(
+                          color: AppColors.background2,
+                        )
+                      : const Text(
+                          'Add to plan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary, // đỏ như hình
                     foregroundColor: Colors.white,
